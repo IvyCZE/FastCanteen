@@ -1,0 +1,401 @@
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+<html>
+    <head>
+        <title>iCanteen - přihlášení uživatele</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+        <meta http-equiv="Cache-control" content="no-cache, no-store, must-revalidate"/>
+        <meta http-equiv="Pragma" content="no-cache"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+            
+                <link rel='stylesheet' type='text/css' href='/fonts/open-sans/open-sans.css'>
+            
+            
+        
+        <link rel="shortcut icon" href="/img/favicon.ico" >
+        <link href="/css/style-2.22.24.css" rel="stylesheet" type="text/css">
+        <link href="/css/login-2.22.24.css" rel="stylesheet" type="text/css">
+        
+        <link type="text/css" href="/css/smoothness/jquery-ui.min.css" rel="Stylesheet" >
+        <link type="text/css" href="/css/jquery.lighter.css" rel="stylesheet" >
+        <link type="text/css" href="/css/ui.notify.css" rel="Stylesheet" >
+        <link rel="stylesheet" href="/fonts/fontawesome/css/all.min.css">
+        <script type="text/javascript" src="/js/jquery.min.js"></script>
+        <script type="text/javascript" src="/js/jquery-migrate.min.js"></script>
+        <script type="text/javascript" src="/js/jquery.browser.mobile.js"></script>
+        <script type="text/javascript" src="/js/jquery.lighter.js"></script>
+    </head>
+    <body>
+        
+            
+            
+            
+            
+            
+            
+            
+            <script type="text/javascript">
+                <!--
+                window.onerror = function (msg, url, linenumber) {
+                    console.log('Error message: '+msg+'\nURL: '+url+'\nLine Number: '+linenumber);
+                    return true;
+                };
+                // -->
+            </script>
+            <script type="text/javascript">
+                <!--
+                function checkAddon() {
+                    setTimeout(function() {
+                        var showPrinter = document.getElementById("showPrinter").checked;
+                        var showKeyboard = document.getElementById("showKeyboard").checked;
+
+                        if ('' !== 'true' || '' !== showPrinter.toString() || '' != showKeyboard.toString()) {
+                            window.location.replace("/terminal.jsp?printer=" + showPrinter + "&keyboard=" + showKeyboard);
+                        }
+                    }, 150);
+                }
+
+                $(document).ready(function () {
+                    $('form').submit(function(){
+                        $('input[type=submit]', this).attr('disabled', 'disabled');
+                    });
+                });
+
+                window.addEventListener( "pageshow", function ( event ) {
+                    var historyTraversal = event.persisted ||
+                        ( typeof window.performance != "undefined" &&
+                            window.performance.navigation.type === 2 );
+                    if ( historyTraversal ) {
+                        // Handle page restore.
+                        window.location.reload();
+                    }
+                });
+
+                var message = "Don't try to right-click";
+                ///////////////////////////////////
+                function clickIE() {
+                    if (document.all) {
+                        (message);
+                        return false;
+                    }
+                }
+                function clickNS(e) {
+                    if
+                            (document.layers || (document.getElementById && !document.all)) {
+                        if (e.which === 2 || e.which === 3) {
+                            (message);
+                            return false;
+                        }
+                    }
+                }
+                if (document.layers)
+                {
+                    document.captureEvents(Event.MOUSEDOWN);
+                    document.onmousedown = clickNS;
+                } else {
+                    document.onmouseup = clickNS;
+                    document.oncontextmenu = clickIE;
+                }
+
+                document.oncontextmenu = function() { return false };
+
+                function showlayer(layer) {
+                    var myLayer = document.getElementById(layer);
+                    if (myLayer.style.display === "none" || myLayer.style.display === "") {
+                        myLayer.style.display = "block";
+                    } else {
+                        myLayer.style.display = "none";
+                    }
+                }
+                // -->
+        </script>
+                <div id="mainContextDiv">
+                    
+                
+                        
+                <script type="text/javascript">
+                    <!--
+                    $(document).ready(function () {
+                        $('#j_username').focus();
+                                });
+                    // -->
+                            </script>                                                                                                   
+                <div id="navbar">
+                                <div id="login_menu" class="login_menu login_menu_margin">
+                                <div><img src="/img/logo.png" alt="logo" onmousedown="if (event.preventDefault)
+                                                event.preventDefault();" /></div>
+                                    <div style="float: right;">
+                                        
+                                    </div>
+                                    
+                                    <div id="signup-user-col">
+                                        <div>
+                                            <form method="POST" name="formName" action="/j_spring_security_check">
+                                                <ul>
+                                                    <li>
+                                                        <div class="input-group margin-bottom-sm">
+                                                            <span class="input-group-addon"><i class="fa fa-user fa-fw"></i></span>
+                                                            <input class="form-control" type="text" placeholder="Přihlašovací jméno" name="j_username" id="j_username"  required/>
+                                                            </div>
+                                                            <div class="input-group">
+                                                                <span class="input-group-addon"><i class="fa fa-key fa-fw"></i></span>
+                                                                <input class="form-control" type="password" placeholder="Heslo" name="j_password" id="j_password" autocomplete="current-password" required/>
+                                                        </div>
+                                                    </li>
+                                                    <li>
+                                                        <input type='checkbox' name='_spring_security_remember_me' class="checkbox-inline"/> Neodhlašovat mě na tomto počítači.
+                                                    </li>
+                                                    <li>
+                                                        <input type="hidden" name="terminal" value="false"/>
+                                                        <input type="hidden" name="_csrf" value="00000000-0000-0000-0000-000000000000"/>
+                                                        
+                                                        
+                                                            <input type="hidden" name="targetUrl" value="/faces/secured/main.jsp?status=true&amp;printer=&amp;keyboard="/>
+                                                        
+                                                        <input type="submit" value="Přihlásit" class="btn btn-primary btn-login"/>
+                                                    </li>
+                                                </ul>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    
+                                    
+                                    <div style="margin-top: 10px;">
+                                        
+                                            <a href="/passwordrecovery">Obnovit zapomenuté heslo</a>
+                                        
+                                        
+                                        
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                            
+                                <div class="jidelnicek jidelnicekWeb">
+                                    
+                                    
+                                        
+                                            
+
+
+
+
+
+
+
+
+
+
+    
+    
+
+    
+        
+            
+        
+        
+    
+
+    <div class="jidelnicekDen">
+        <div id="day-2026-10-16" class="jidelnicekTop semibold">
+            Pátek&nbsp;16.10.2026
+        </div>
+        <article>
+            
+        </article>
+    </div>
+
+
+                                        
+                                            
+
+
+
+
+
+
+
+
+
+
+    
+    
+
+    
+        
+            
+        
+        
+    
+
+    <div class="jidelnicekDen">
+        <div id="day-2026-10-19" class="jidelnicekTop semibold">
+            Pondělí&nbsp;19.10.2026
+        </div>
+        <article>
+            
+        </article>
+    </div>
+
+
+                                        
+                                            
+
+
+
+
+
+
+
+
+
+
+    
+    
+
+    
+        
+            
+        
+        
+    
+
+    <div class="jidelnicekDen">
+        <div id="day-2026-10-20" class="jidelnicekTop semibold">
+            Úterý&nbsp;20.10.2026
+        </div>
+        <article>
+            
+        </article>
+    </div>
+
+
+                                        
+                                            
+
+
+
+
+
+
+
+
+
+
+    
+    
+
+    
+        
+            
+        
+        
+    
+
+    <div class="jidelnicekDen">
+        <div id="day-2026-10-21" class="jidelnicekTop semibold">
+            Středa&nbsp;21.10.2026
+        </div>
+        <article>
+            
+        </article>
+    </div>
+
+
+                                        
+                                            
+
+
+
+
+
+
+
+
+
+
+    
+    
+
+    
+        
+            
+        
+        
+    
+
+    <div class="jidelnicekDen">
+        <div id="day-2026-10-22" class="jidelnicekTop semibold">
+            Čtvrtek&nbsp;22.10.2026
+        </div>
+        <article>
+            
+        </article>
+    </div>
+
+
+                                        
+                                            
+
+
+
+
+
+
+
+
+
+
+    
+    
+
+    
+        
+            
+        
+        
+    
+
+    <div class="jidelnicekDen">
+        <div id="day-2026-10-23" class="jidelnicekTop semibold">
+            Pátek&nbsp;23.10.2026
+        </div>
+        <article>
+            
+        </article>
+    </div>
+
+
+                                        
+                                    
+                                    
+                                </div>
+                            
+                        
+                        </div>
+            <input type="checkbox" id="showPrinter"  style="visibility:hidden">
+            <input type="checkbox" id="showKeyboard"  style="visibility:hidden">
+            <img src="moz-extension://00000000-0000-0000-0000-000000000000/pixel.png" width="0" height="0" onload="checkAddon();" style="visibility:hidden" alt="kiosk-firefox" />
+            <img src="chrome-extension://afjpbnenpfjkflbfdblenihgbigkjcnj/pixel.png" width="0" height="0" onload="checkAddon();" style="visibility:hidden" alt="kiosk-chrome" />
+            
+                            <div class="help noPrint" title="Zobrazí nápovědu a popis funkcí programu"><a href="/help" alt="Otevřít nápovědu"><i class="fa fa-question fa-2x"></i></a></div>
+                        
+            <div align="center" class="textGrey noPrint" style="position: relative; clear: both; z-index:1; text-align: center; margin-top: 10px">iCanteen 2.22.24 | 2026-10-16 06:43:31 | &copy; <a href="https://www.z-ware.cz">Z-WARE s.r.o.</a> 2003-2026
+                
+            </div>
+                    
+                    </body>
+                    </html>
