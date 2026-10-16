@@ -1,0 +1,216 @@
+package yt.ivy.librecanteen.ui.settings
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import yt.ivy.librecanteen.R
+import yt.ivy.librecanteen.data.Account
+import yt.ivy.librecanteen.data.CanteenRepository
+import yt.ivy.librecanteen.ui.UiText
+import yt.ivy.librecanteen.ui.asString
+import yt.ivy.librecanteen.ui.toUiText
+
+data class PasswordState(
+    val working: Boolean = false,
+    val error: UiText? = null,
+    val changed: Boolean = false,
+)
+
+class SettingsViewModel(private val repository: CanteenRepository) : ViewModel() {
+    private val _password = MutableStateFlow(PasswordState())
+    val password: StateFlow<PasswordState> = _password.asStateFlow()
+
+    fun changePassword(current: String, new: String) {
+        if (_password.value.working) return
+        _password.value = PasswordState(working = true)
+        viewModelScope.launch {
+            try {
+                repository.changePassword(current, new)
+                _password.value = PasswordState(changed = true)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _password.value = PasswordState(error = e.toUiText())
+            }
+        }
+    }
+
+    fun resetPassword() {
+        _password.value = PasswordState()
+    }
+
+    fun signOut() {
+        viewModelScope.launch { repository.signOut() }
+    }
+}
+
+@Composable
+fun SettingsScreen(
+    account: Account?,
+    password: PasswordState,
+    onChangePassword: (current: String, new: String) -> Unit,
+    onPasswordDialogClosed: () -> Unit,
+    onSignOut: () -> Unit,
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val version = remember {
+        runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty()
+    }
+
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Section(stringResource(R.string.settings_account)) {
+            account?.let {
+                InfoRow(stringResource(R.string.settings_username), it.username)
+                InfoRow(stringResource(R.string.settings_canteen), it.address)
+            }
+            OutlinedButton(onClick = { showDialog = true }, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.settings_change_password))
+            }
+            OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.settings_sign_out))
+            }
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Section(stringResource(R.string.settings_about)) {
+            Text(
+                stringResource(R.string.settings_about_text, version),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+
+    if (showDialog) {
+        ChangePasswordDialog(
+            state = password,
+            onConfirm = onChangePassword,
+            onDismiss = {
+                showDialog = false
+                onPasswordDialogClosed()
+            },
+        )
+    }
+}
+
+@Composable
+private fun Section(title: String, content: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+        content()
+    }
+}
+
+@Composable
+private fun InfoRow(label: String, value: String) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+private fun ChangePasswordDialog(
+    state: PasswordState,
+    onConfirm: (current: String, new: String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var current by remember { mutableStateOf("") }
+    var new by remember { mutableStateOf("") }
+    var repeat by remember { mutableStateOf("") }
+
+    val mismatch = repeat.isNotEmpty() && new != repeat
+    val same = new.isNotEmpty() && new == current
+    val valid = current.isNotEmpty() && new.isNotEmpty() && new == repeat && !same
+
+    if (state.changed) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            text = { Text(stringResource(R.string.password_changed)) },
+            confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.dialog_close)) } },
+        )
+        return
+    }
+
+    AlertDialog(
+        onDismissRequest = { if (!state.working) onDismiss() },
+        title = { Text(stringResource(R.string.settings_change_password)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                PasswordField(current, { current = it }, stringResource(R.string.password_current))
+                PasswordField(new, { new = it }, stringResource(R.string.password_new))
+                PasswordField(repeat, { repeat = it }, stringResource(R.string.password_repeat))
+                val message = when {
+                    mismatch -> stringResource(R.string.password_mismatch)
+                    same -> stringResource(R.string.password_same)
+                    else -> state.error?.asString()
+                }
+                if (message != null) {
+                    Text(message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(current, new) }, enabled = valid && !state.working) {
+                if (state.working) {
+                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                } else {
+                    Text(stringResource(R.string.password_confirm))
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !state.working) { Text(stringResource(R.string.dialog_close)) }
+        },
+    )
+}
+
+@Composable
+private fun PasswordField(value: String, onValueChange: (String) -> Unit, label: String) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        singleLine = true,
+        visualTransformation = PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        modifier = Modifier.fillMaxWidth(),
+    )
+}

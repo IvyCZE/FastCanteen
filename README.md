@@ -1,16 +1,23 @@
 # LibreCanteen
 
 An open-source Android client for school canteens running **iCanteen**, built to be pleasant to use:
-a calm, fast interface for the weekly menu, ordering, credit, payments and account settings
+a calm, fast interface for the weekly menu, one-tap ordering, credit, payments and account settings
 (including changing your password).
 
 > **Not affiliated with Z-WARE s.r.o.** LibreCanteen is an independent, non-commercial project.
 > "iCanteen" is a product of Z-WARE s.r.o. This project contains none of its code, styles or images.
 
-## Status
+## Features
 
-Early development. Only the `:core` library exists so far (read-only: login, account status, daily menu).
-The Android app (`:app`) is next.
+- Weekly menu with credit, order and cancel deadlines, allergens, and canteen-stated reasons when a meal is locked
+- Order, cancel and switch meals with one tap (with "Undo"); every change is verified against the server
+- Order history and payments
+- Change password (confirmed by logging in with the new one)
+- Sign-in is remembered; the login is stored encrypted with a non-exportable Android Keystore key
+- Czech and English, light and dark theme
+
+Not implemented yet: order notes, multiple portions, the meal exchange (burza), personal allergen highlighting,
+offline cache, reminders, biometric lock.
 
 ## How it works
 
@@ -23,18 +30,28 @@ Everything backend-specific lives behind `CanteenProvider`, so another implement
 
 ```
 core/   pure Kotlin/JVM: models, CanteenProvider, iCanteen HTML client and parsers
-app/    Android UI (planned)
+app/    Android app (Jetpack Compose); session handling, UI
 ```
 
-## Development
+Design decisions worth knowing:
 
-Requires JDK 21.
+- Order operations are signed by the server per page. The app never reuses one after a session
+  renewal; it reloads and asks again.
+- A change counts as done only after the server's own view of the day confirms it.
+- Only `https` canteen addresses are accepted.
+
+## Building
+
+Requires JDK 21 and the Android SDK (platform 36). Point Gradle at the SDK with `local.properties`
+(`sdk.dir=/path/to/Android/Sdk`) or `ANDROID_HOME`.
 
 ```sh
-./gradlew :core:test
+./gradlew :core:test :app:testDebugUnitTest   # tests
+./gradlew :app:assembleDebug                  # app/build/outputs/apk/debug/app-debug.apk
 ```
 
 Parser tests run against anonymized HTML samples in `core/src/test/resources/fixtures/`.
+The `synthetic_*` samples were written by hand from the site's own scripts, not captured.
 When adding samples, remove names, usernames, addresses, balances, CSRF values and order tokens first.
 
 ## Privacy

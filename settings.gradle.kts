@@ -17,3 +17,4 @@ dependencyResolutionManagement {
 rootProject.name = "librecanteen"
 
 include(":core")
+include(":app")

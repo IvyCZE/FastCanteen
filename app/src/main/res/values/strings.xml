@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LibreCanteen</string>
+
+    <string name="tab_menu">Jídelníček</string>
+    <string name="tab_history">Historie</string>
+    <string name="tab_settings">Nastavení</string>
+
+    <string name="login_title">Přihlášení do jídelny</string>
+    <string name="login_address">Adresa jídelny</string>
+    <string name="login_address_hint">např. jidelna.vase-skola.cz</string>
+    <string name="login_username">Uživatelské jméno</string>
+    <string name="login_password">Heslo</string>
+    <string name="login_button">Přihlásit se</string>
+    <string name="login_disclaimer">Neoficiální klient pro iCanteen. Přihlašovací údaje zůstávají jen v tomto zařízení.</string>
+    <string name="show_password">Zobrazit heslo</string>
+    <string name="hide_password">Skrýt heslo</string>
+
+    <string name="error_auth">Nesprávné uživatelské jméno nebo heslo.</string>
+    <string name="error_network">Nelze se připojit k jídelně. Zkontroluj připojení a adresu.</string>
+    <string name="error_layout">Jídelna používá verzi iCanteen, které aplikace nerozumí. Podporovaná je verze 2.22.</string>
+    <string name="error_address">Adresa jídelny není platná. Povolené jsou jen adresy s https.</string>
+    <string name="error_session">Přihlášení vypršelo. Přihlas se znovu.</string>
+    <string name="error_generic">Něco se nepovedlo.</string>
+    <string name="error_not_applied">Jídelna změnu nepřijala. Zkus to znovu.</string>
+    <string name="error_partial">Část dní se nepodařilo načíst.</string>
+    <string name="retry">Zkusit znovu</string>
+
+    <string name="week_title">Týden %1$d</string>
+    <string name="week_previous">Předchozí týden</string>
+    <string name="week_next">Další týden</string>
+    <string name="credit_label">Kredit</string>
+    <string name="today">Dnes</string>
+    <string name="no_menu">Na tento den není jídelníček.</string>
+
+    <string name="action_order">Objednat</string>
+    <string name="action_cancel_order">Zrušit</string>
+    <string name="action_switch">Přeobjednat</string>
+    <string name="state_ordered">Objednáno</string>
+    <string name="state_ordered_locked">Objednáno, nelze zrušit</string>
+    <string name="order_until">Objednat do %1$s</string>
+    <string name="cancel_until">zrušit do %1$s</string>
+    <string name="msg_ordered">Objednáno: %1$s</string>
+    <string name="msg_cancelled">Zrušeno: %1$s</string>
+    <string name="msg_switched">Přeobjednáno: %1$s</string>
+    <string name="undo">Zpět</string>
+
+    <string name="history_orders">Objednávky</string>
+    <string name="history_payments">Platby</string>
+    <string name="history_empty">Nic tu zatím není.</string>
+    <string name="history_issued">vydáno</string>
+    <string name="history_not_issued">nevydáno</string>
+    <string name="history_quantity">%1$d ks</string>
+
+    <string name="settings_account">Účet</string>
+    <string name="settings_username">Uživatel</string>
+    <string name="settings_canteen">Jídelna</string>
+    <string name="settings_change_password">Změnit heslo</string>
+    <string name="settings_sign_out">Odhlásit se</string>
+    <string name="settings_about">O aplikaci</string>
+    <string name="settings_about_text">LibreCanteen %1$s. Neoficiální open-source klient pro iCanteen, nespojený se společností Z-WARE s.r.o.</string>
+
+    <string name="password_current">Stávající heslo</string>
+    <string name="password_new">Nové heslo</string>
+    <string name="password_repeat">Nové heslo znovu</string>
+    <string name="password_mismatch">Hesla se neshodují.</string>
+    <string name="password_same">Nové heslo musí být jiné než stávající.</string>
+    <string name="password_changed">Heslo bylo změněno.</string>
+    <string name="password_confirm">Změnit</string>
+    <string name="dialog_close">Zavřít</string>
+</resources>
