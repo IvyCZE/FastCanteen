@@ -2,8 +2,7 @@
 <resources>
     <string name="app_name">LibreCanteen</string>
 
-    <string name="tab_menu">Menu</string>
-    <string name="tab_history">History</string>
+    <string name="tab_menu">Lunches</string>
     <string name="tab_settings">Settings</string>
 
     <string name="login_title">Sign in to your canteen</string>
@@ -26,10 +25,8 @@
     <string name="error_partial">Some days could not be loaded.</string>
     <string name="retry">Try again</string>
 
-    <string name="week_title">Week %1$d</string>
     <string name="week_previous">Previous week</string>
     <string name="week_next">Next week</string>
-    <string name="credit_label">Credit</string>
     <string name="today">Today</string>
     <string name="no_menu">There is no menu for this day.</string>
 
@@ -70,11 +67,7 @@
     <string name="dialog_close">Close</string>
     <string name="offline_banner">Offline. Showing the last loaded data, ordering is unavailable.</string>
     <string name="in_exchange">In the exchange</string>
-    <string name="note_add">Note</string>
-    <string name="note_edit">Edit note</string>
-    <string name="note_title">Order note</string>
     <string name="note_save">Save</string>
-    <string name="note_shown">Note: %1$s</string>
     <string name="msg_note_saved">Note saved</string>
 
     <string name="settings_app">App</string>
@@ -91,4 +84,33 @@
     <string name="settings_allergens">My allergens</string>
     <string name="allergens_hint">Saved in the canteen. Dishes with the selected allergens are highlighted in the menu.</string>
     <string name="allergens_saved">Allergens saved.</string>
+    <string name="tab_info">Info</string>
+    <string name="tab_burza">Burza</string>
+    <string name="back">Back</string>
+    <string name="day_previous">Previous day</string>
+    <string name="day_next">Next day</string>
+    <string name="month_previous">Previous month</string>
+    <string name="month_next">Next month</string>
+    <string name="toggle_calendar_mode">Switch between week and month view</string>
+    <string name="meal_details">Meal details</string>
+    <string name="note_hint">Add note…</string>
+    <string name="info_order_until">Order until</string>
+    <string name="info_cancel_until">Cancel until</string>
+    <string name="info_pickup">Pickup</string>
+    <string name="info_orders">Ordered</string>
+    <string name="info_allergens">Allergens</string>
+    <string name="info_no_allergens">No allergens are listed for this meal.</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="theme_system">Follow system</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_amoled">AMOLED (black)</string>
+    <string name="settings_dynamic_color">Wallpaper colors</string>
+    <string name="settings_dynamic_color_hint">Use the colors of your phone\'s wallpaper.</string>
+    <string name="settings_dynamic_color_unavailable">Requires Android 12 or newer.</string>
+    <string name="settings_calendar_mode">Lunch view</string>
+    <string name="calendar_week">Week</string>
+    <string name="calendar_month">Month</string>
+    <string name="settings_calendar_mode_hint">You can also switch by long-pressing the date bar.</string>
 </resources>

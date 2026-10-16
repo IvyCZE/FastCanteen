@@ -6,6 +6,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+enum class ThemeMode { SYSTEM, LIGHT, DARK, AMOLED }
+
+enum class CalendarMode { WEEK, MONTH }
+
 /** Non-secret preferences. Credentials live in [CredentialVault], never here. */
 class AppSettings(private val prefs: SharedPreferences) {
     constructor(context: Context) : this(context.getSharedPreferences("settings", Context.MODE_PRIVATE))
@@ -15,6 +19,39 @@ class AppSettings(private val prefs: SharedPreferences) {
 
     private val _reminders = MutableStateFlow(prefs.getBoolean(KEY_REMINDERS, false))
     val reminders: StateFlow<Boolean> = _reminders.asStateFlow()
+
+    private val _themeMode = MutableStateFlow(readEnum(KEY_THEME, ThemeMode.SYSTEM))
+    val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
+
+    private val _dynamicColor = MutableStateFlow(prefs.getBoolean(KEY_DYNAMIC, true))
+    val dynamicColor: StateFlow<Boolean> = _dynamicColor.asStateFlow()
+
+    private val _calendarMode = MutableStateFlow(readEnum(KEY_CALENDAR, CalendarMode.WEEK))
+    val calendarMode: StateFlow<CalendarMode> = _calendarMode.asStateFlow()
+
+    fun setThemeMode(mode: ThemeMode) {
+        prefs.edit().putString(KEY_THEME, mode.name).apply()
+        _themeMode.value = mode
+    }
+
+    fun setDynamicColor(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_DYNAMIC, enabled).apply()
+        _dynamicColor.value = enabled
+    }
+
+    fun setCalendarMode(mode: CalendarMode) {
+        prefs.edit().putString(KEY_CALENDAR, mode.name).apply()
+        _calendarMode.value = mode
+    }
+
+    private inline fun <reified E : Enum<E>> readEnum(key: String, default: E): E =
+        prefs.getString(key, null)?.let { name -> enumValues<E>().firstOrNull { it.name == name } } ?: default
+
+    /** Full allergen names by code, kept so the details sheet works offline. */
+    var allergenNames: Map<String, String>
+        get() = prefs.getStringSet(KEY_ALLERGEN_NAMES, emptySet()).orEmpty()
+            .mapNotNull { it.split(SEPARATOR, limit = 2).takeIf { p -> p.size == 2 }?.let { p -> p[0] to p[1] } }.toMap()
+        set(value) = prefs.edit().putStringSet(KEY_ALLERGEN_NAMES, value.map { "${it.key}$SEPARATOR${it.value}" }.toSet()).apply()
 
     fun setBiometricLock(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_LOCK, enabled).apply()
@@ -47,6 +84,11 @@ class AppSettings(private val prefs: SharedPreferences) {
     }
 
     private companion object {
+        const val SEPARATOR = '\u001f'
+        const val KEY_THEME = "theme_mode"
+        const val KEY_DYNAMIC = "dynamic_color"
+        const val KEY_CALENDAR = "calendar_mode"
+        const val KEY_ALLERGEN_NAMES = "allergen_names"
         const val KEY_LOCK = "biometric_lock"
         const val KEY_REMINDERS = "reminders"
         const val KEY_LAST_REMINDER = "last_reminder_week"

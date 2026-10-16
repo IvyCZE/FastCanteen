@@ -4,7 +4,13 @@ import android.os.Bundle
 import android.os.SystemClock
 import android.view.WindowManager
 import androidx.activity.compose.setContent
+import android.graphics.Color
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import yt.ivy.librecanteen.ui.theme.isDark
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +37,15 @@ class MainActivity : FragmentActivity() {
         }.launchIn(lifecycleScope)
 
         setContent {
-            LibreCanteenTheme {
+            val themeMode by app.settings.themeMode.collectAsStateWithLifecycle()
+            val dynamicColor by app.settings.dynamicColor.collectAsStateWithLifecycle()
+            val dark = themeMode.isDark()
+            // The system bar icons must follow the app's theme, not the system's.
+            SideEffect {
+                val style = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { dark }
+                enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+            }
+            LibreCanteenTheme(themeMode, dynamicColor) {
                 AppRoot(
                     repository = app.repository,
                     settings = app.settings,

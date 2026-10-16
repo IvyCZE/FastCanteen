@@ -11,7 +11,21 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -45,6 +59,9 @@ import yt.ivy.librecanteen.R
 import yt.ivy.librecanteen.core.model.AllergenSettings
 import yt.ivy.librecanteen.data.Account
 import yt.ivy.librecanteen.data.AppSettings
+import yt.ivy.librecanteen.data.CalendarMode
+import yt.ivy.librecanteen.data.ThemeMode
+import yt.ivy.librecanteen.ui.theme.dynamicColorSupported
 import yt.ivy.librecanteen.data.CanteenRepository
 import yt.ivy.librecanteen.ui.UiText
 import yt.ivy.librecanteen.ui.asString
@@ -134,8 +151,11 @@ class SettingsViewModel(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    settings: AppSettings,
+    onBack: () -> Unit,
     account: Account?,
     password: PasswordState,
     onChangePassword: (current: String, new: String) -> Unit,
@@ -158,10 +178,75 @@ fun SettingsScreen(
         runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty()
     }
 
+    val themeMode by settings.themeMode.collectAsStateWithLifecycle()
+    val dynamicColor by settings.dynamicColor.collectAsStateWithLifecycle()
+    val calendarMode by settings.calendarMode.collectAsStateWithLifecycle()
+
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.tab_settings)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+            )
+        },
+    ) { padding ->
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+        Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        Section(stringResource(R.string.settings_appearance)) {
+            Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.bodyMedium)
+            ThemeMode.entries.forEach { option ->
+                Row(
+                    Modifier.fillMaxWidth().selectable(selected = themeMode == option, role = Role.RadioButton) { settings.setThemeMode(option) },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(selected = themeMode == option, onClick = null)
+                    Text(
+                        stringResource(
+                            when (option) {
+                                ThemeMode.SYSTEM -> R.string.theme_system
+                                ThemeMode.LIGHT -> R.string.theme_light
+                                ThemeMode.DARK -> R.string.theme_dark
+                                ThemeMode.AMOLED -> R.string.theme_amoled
+                            },
+                        ),
+                        modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp),
+                    )
+                }
+            }
+            SwitchRow(
+                stringResource(R.string.settings_dynamic_color),
+                stringResource(if (dynamicColorSupported) R.string.settings_dynamic_color_hint else R.string.settings_dynamic_color_unavailable),
+                dynamicColor && dynamicColorSupported,
+                dynamicColorSupported,
+                settings::setDynamicColor,
+            )
+            Text(stringResource(R.string.settings_calendar_mode), style = MaterialTheme.typography.bodyMedium)
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                CalendarMode.entries.forEachIndexed { index, option ->
+                    SegmentedButton(
+                        selected = calendarMode == option,
+                        onClick = { settings.setCalendarMode(option) },
+                        shape = SegmentedButtonDefaults.itemShape(index, CalendarMode.entries.size),
+                    ) {
+                        Text(stringResource(if (option == CalendarMode.WEEK) R.string.calendar_week else R.string.calendar_month))
+                    }
+                }
+            }
+            Text(
+                stringResource(R.string.settings_calendar_mode_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Section(stringResource(R.string.settings_account)) {
             account?.let {
                 InfoRow(stringResource(R.string.settings_username), it.username)
@@ -197,6 +282,7 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
     }
 
     if (showAllergens) {

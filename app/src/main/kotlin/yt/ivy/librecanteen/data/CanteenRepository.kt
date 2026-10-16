@@ -13,6 +13,7 @@ import yt.ivy.librecanteen.core.model.AllergenSettings
 import yt.ivy.librecanteen.core.model.Credentials
 import yt.ivy.librecanteen.core.model.DayMenu
 import yt.ivy.librecanteen.core.model.Meal
+import yt.ivy.librecanteen.core.model.Money
 import yt.ivy.librecanteen.core.model.OrderRecord
 import yt.ivy.librecanteen.core.model.Payment
 import java.time.LocalDate
@@ -30,6 +31,11 @@ class CanteenRepository(
 ) {
     private val _account = MutableStateFlow(store.load()?.let { Account(it.address, it.username) })
     val account: StateFlow<Account?> = _account.asStateFlow()
+
+    private val _credit = MutableStateFlow<Money?>(null)
+
+    /** Credit as of the last successful status request. */
+    val credit: StateFlow<Money?> = _credit.asStateFlow()
 
     private val sessionLock = Mutex()
     private var provider: CanteenProvider? = null
@@ -54,10 +60,11 @@ class CanteenRepository(
         runCatching { current?.logout() }
         store.clear()
         cache.clear()
+        _credit.value = null
         _account.value = null
     }
 
-    suspend fun status(): AccountStatus = session { it.status() }
+    suspend fun status(): AccountStatus = session { it.status() }.also { _credit.value = it.credit }
 
     suspend fun menu(day: LocalDate): DayMenu = session { it.menu(day) }.also(cache::put)
 

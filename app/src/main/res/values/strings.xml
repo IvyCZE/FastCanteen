@@ -2,8 +2,7 @@
 <resources>
     <string name="app_name">LibreCanteen</string>
 
-    <string name="tab_menu">Jídelníček</string>
-    <string name="tab_history">Historie</string>
+    <string name="tab_menu">Obědy</string>
     <string name="tab_settings">Nastavení</string>
 
     <string name="login_title">Přihlášení do jídelny</string>
@@ -26,10 +25,8 @@
     <string name="error_partial">Část dní se nepodařilo načíst.</string>
     <string name="retry">Zkusit znovu</string>
 
-    <string name="week_title">Týden %1$d</string>
     <string name="week_previous">Předchozí týden</string>
     <string name="week_next">Další týden</string>
-    <string name="credit_label">Kredit</string>
     <string name="today">Dnes</string>
     <string name="no_menu">Na tento den není jídelníček.</string>
 
@@ -70,11 +67,7 @@
     <string name="dialog_close">Zavřít</string>
     <string name="offline_banner">Bez připojení. Zobrazuji naposledy načtená data, nelze objednávat.</string>
     <string name="in_exchange">V burze</string>
-    <string name="note_add">Poznámka</string>
-    <string name="note_edit">Upravit poznámku</string>
-    <string name="note_title">Poznámka k objednávce</string>
     <string name="note_save">Uložit</string>
-    <string name="note_shown">Poznámka: %1$s</string>
     <string name="msg_note_saved">Poznámka uložena</string>
 
     <string name="settings_app">Aplikace</string>
@@ -91,4 +84,33 @@
     <string name="settings_allergens">Moje alergeny</string>
     <string name="allergens_hint">Uloží se do jídelny. Jídla s vybranými alergeny se v jídelníčku zvýrazní.</string>
     <string name="allergens_saved">Alergeny byly uloženy.</string>
+    <string name="tab_info">Info</string>
+    <string name="tab_burza">Burza</string>
+    <string name="back">Zpět</string>
+    <string name="day_previous">Předchozí den</string>
+    <string name="day_next">Další den</string>
+    <string name="month_previous">Předchozí měsíc</string>
+    <string name="month_next">Další měsíc</string>
+    <string name="toggle_calendar_mode">Přepnout týdenní a měsíční zobrazení</string>
+    <string name="meal_details">Podrobnosti o jídle</string>
+    <string name="note_hint">Přidat poznámku…</string>
+    <string name="info_order_until">Objednat do</string>
+    <string name="info_cancel_until">Zrušit do</string>
+    <string name="info_pickup">Výdej</string>
+    <string name="info_orders">Objednáno</string>
+    <string name="info_allergens">Alergeny</string>
+    <string name="info_no_allergens">U tohoto jídla nejsou uvedeny žádné alergeny.</string>
+    <string name="settings_appearance">Vzhled</string>
+    <string name="settings_theme">Motiv</string>
+    <string name="theme_system">Podle systému</string>
+    <string name="theme_light">Světlý</string>
+    <string name="theme_dark">Tmavý</string>
+    <string name="theme_amoled">AMOLED (černý)</string>
+    <string name="settings_dynamic_color">Barvy z tapety</string>
+    <string name="settings_dynamic_color_hint">Aplikace převezme barvy z tapety telefonu.</string>
+    <string name="settings_dynamic_color_unavailable">Vyžaduje Android 12 nebo novější.</string>
+    <string name="settings_calendar_mode">Zobrazení jídelníčku</string>
+    <string name="calendar_week">Týden</string>
+    <string name="calendar_month">Měsíc</string>
+    <string name="settings_calendar_mode_hint">Přepnout lze také dlouhým podržením lišty s datem.</string>
 </resources>
