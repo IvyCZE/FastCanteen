@@ -1,6 +1,7 @@
 package yt.ivy.librecanteen.ui.week
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +19,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,6 +38,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -62,6 +69,7 @@ fun WeekScreen(
     onPrevious: () -> Unit,
     onNext: () -> Unit,
     onAction: (LocalDate, Meal) -> Unit,
+    onNote: (LocalDate, Meal, String) -> Unit,
 ) {
     val undoLabel = stringResource(R.string.undo)
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -83,6 +91,16 @@ fun WeekScreen(
 
     Column(Modifier.fillMaxSize()) {
         WeekHeader(state, onPrevious, onNext)
+        if (state.offline) {
+            Text(
+                stringResource(R.string.offline_banner),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+            )
+        }
         PullToRefreshBox(isRefreshing = state.loading, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
             val error = state.error
             if (error != null && state.days.isEmpty()) {
@@ -101,7 +119,7 @@ fun WeekScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(state.weekdays, key = { it.toString() }) { day ->
-                        DayCard(day, state.days[day], state.busy, onAction)
+                        DayCard(day, state.days[day], state, onAction, onNote)
                     }
                 }
             }
@@ -139,8 +157,9 @@ private fun WeekHeader(state: WeekState, onPrevious: () -> Unit, onNext: () -> U
 private fun DayCard(
     day: LocalDate,
     menu: DayMenu?,
-    busy: Set<MealKey>,
+    state: WeekState,
     onAction: (LocalDate, Meal) -> Unit,
+    onNote: (LocalDate, Meal, String) -> Unit,
 ) {
     val isToday = day == LocalDate.now()
     Card(
@@ -177,7 +196,10 @@ private fun DayCard(
                 else -> menu.meals.forEachIndexed { index, meal ->
                     if (index > 0) HorizontalDivider(Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outlineVariant)
                     else Spacer(Modifier.padding(top = 8.dp))
-                    MealRow(day, meal, busy.contains(MealKey(day, meal.course, meal.label)), onAction)
+                    MealRow(
+                        day, meal, state.busy.contains(MealKey(day, meal.course, meal.label)),
+                        state.offline, state.allergens, onAction, onNote,
+                    )
                 }
             }
         }
@@ -185,7 +207,16 @@ private fun DayCard(
 }
 
 @Composable
-private fun MealRow(day: LocalDate, meal: Meal, busy: Boolean, onAction: (LocalDate, Meal) -> Unit) {
+private fun MealRow(
+    day: LocalDate,
+    meal: Meal,
+    busy: Boolean,
+    offline: Boolean,
+    allergens: Set<String>,
+    onAction: (LocalDate, Meal) -> Unit,
+    onNote: (LocalDate, Meal, String) -> Unit,
+) {
+    var editingNote by remember { mutableStateOf(false) }
     val ordered = meal.state == MealState.ORDERED || meal.state == MealState.ORDERED_LOCKED
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -198,7 +229,21 @@ private fun MealRow(day: LocalDate, meal: Meal, busy: Boolean, onAction: (LocalD
                 )
             }
         }
-        meal.dishes.forEach { DishLine(it) }
+        meal.dishes.forEach { DishLine(it, it.triggers(allergens)) }
+        if (meal.inExchange) {
+            Text(
+                stringResource(R.string.in_exchange),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.tertiary,
+            )
+        }
+        if (!meal.note.isNullOrEmpty()) {
+            Text(
+                stringResource(R.string.note_shown, meal.note.orEmpty()),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
 
         meal.timings.orderUntil?.takeIf { meal.state == MealState.ORDERABLE || meal.state == MealState.REORDERABLE }?.let {
             Text(
@@ -232,15 +277,56 @@ private fun MealRow(day: LocalDate, meal: Meal, busy: Boolean, onAction: (LocalD
             } else {
                 Spacer(Modifier.weight(1f))
             }
-            ActionButton(meal, busy) { onAction(day, meal) }
+            if (meal.noteAction != null && !offline) {
+                TextButton(onClick = { editingNote = true }, enabled = !busy) {
+                    Text(stringResource(if (meal.note.isNullOrEmpty()) R.string.note_add else R.string.note_edit))
+                }
+            }
+            ActionButton(meal, busy || offline) { onAction(day, meal) }
         }
+    }
+    if (editingNote) {
+        NoteDialog(
+            initial = meal.note.orEmpty(),
+            onSave = { editingNote = false; onNote(day, meal, it) },
+            onDismiss = { editingNote = false },
+        )
     }
 }
 
 @Composable
-private fun DishLine(dish: Dish) {
+private fun NoteDialog(initial: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
+    var text by remember { mutableStateOf(initial) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.note_title)) },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it.replace('\n', ' ') },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(text.trim()) }, enabled = text.trim() != initial) {
+                Text(stringResource(R.string.note_save))
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.dialog_close)) } },
+    )
+}
+
+@Composable
+private fun DishLine(dish: Dish, flagged: Boolean) {
     Row {
-        Text(dish.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f, fill = false))
+        Text(
+            dish.name,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (flagged) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+            fontWeight = if (flagged) FontWeight.Bold else FontWeight.Normal,
+            modifier = Modifier.weight(1f, fill = false),
+        )
         if (dish.allergens.isNotEmpty()) {
             Text(
                 "  " + dish.allergens.joinToString(","),

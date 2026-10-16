@@ -6,6 +6,7 @@ import kotlinx.coroutines.test.runTest
 import yt.ivy.librecanteen.core.CanteenException
 import yt.ivy.librecanteen.core.CanteenProvider
 import yt.ivy.librecanteen.core.model.AccountStatus
+import yt.ivy.librecanteen.core.model.AllergenSettings
 import yt.ivy.librecanteen.core.model.Credentials
 import yt.ivy.librecanteen.core.model.DayMenu
 import yt.ivy.librecanteen.core.model.Meal
@@ -57,6 +58,16 @@ private class FakeCanteen : CanteenProvider {
         orderCalls++
         requireSession()
         return DayMenu(day, emptyList())
+    }
+
+    override suspend fun setNote(day: LocalDate, meal: Meal, note: String): DayMenu {
+        requireSession()
+        return DayMenu(day, emptyList())
+    }
+
+    override suspend fun allergenSettings(): AllergenSettings {
+        requireSession()
+        return AllergenSettings(emptyList(), 1)
     }
 
     override suspend fun orderHistory(): List<OrderRecord> = emptyList()

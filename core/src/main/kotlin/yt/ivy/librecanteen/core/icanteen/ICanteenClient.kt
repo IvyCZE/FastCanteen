@@ -15,6 +15,7 @@ import okhttp3.Response
 import yt.ivy.librecanteen.core.CanteenException
 import yt.ivy.librecanteen.core.CanteenProvider
 import yt.ivy.librecanteen.core.model.AccountStatus
+import yt.ivy.librecanteen.core.model.AllergenSettings
 import yt.ivy.librecanteen.core.model.ActionType
 import yt.ivy.librecanteen.core.model.Credentials
 import yt.ivy.librecanteen.core.model.DayMenu
@@ -88,6 +89,25 @@ public class ICanteenClient(
         if (!applied) throw CanteenException.OrderNotApplied()
         updated
     }
+
+    override suspend fun setNote(day: LocalDate, meal: Meal, note: String): DayMenu = mutations.withLock {
+        val action = meal.noteAction ?: throw IllegalArgumentException("Meal cannot carry a note")
+        if (!action.prefix.startsWith(ORDER_ENDPOINT)) {
+            throw CanteenException.UnsupportedLayout("unexpected note operation")
+        }
+
+        val body = fetch("${baseUrl}faces/secured/${action.path(note.trim())}".toHttpUrl())
+        // Refusals are JSON; the shape of a success is not relied on, the re-read below decides.
+        if (body.trim().startsWith("{")) OrderResponseParser.check(body)
+
+        val updated = DayMenuParser.parse(day, fetch(dayUrl(day)))
+        val after = updated.meals.firstOrNull { it.label == meal.label && it.course == meal.course }
+        if (after?.note != note.trim()) throw CanteenException.OrderNotApplied()
+        updated
+    }
+
+    override suspend fun allergenSettings(): AllergenSettings =
+        AllergenSettingsParser.parse(fetch(url("web/setting")))
 
     override suspend fun orderHistory(): List<OrderRecord> =
         OrderHistoryParser.parse(fetch(url("faces/secured/objednavky.jsp")))

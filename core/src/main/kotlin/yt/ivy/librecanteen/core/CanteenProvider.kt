@@ -1,6 +1,7 @@
 package yt.ivy.librecanteen.core
 
 import yt.ivy.librecanteen.core.model.AccountStatus
+import yt.ivy.librecanteen.core.model.AllergenSettings
 import yt.ivy.librecanteen.core.model.Credentials
 import yt.ivy.librecanteen.core.model.DayMenu
 import yt.ivy.librecanteen.core.model.Meal
@@ -31,6 +32,16 @@ public interface CanteenProvider {
      * @throws CanteenException.OrderNotApplied if the canteen accepted the request but the day did not change.
      */
     public suspend fun order(day: LocalDate, meal: Meal): DayMenu
+
+    /**
+     * Stores [note] on the ordered [meal] and returns the day as the server now reports it.
+     *
+     * @throws CanteenException.OrderNotApplied if the stored note differs from [note] afterwards.
+     */
+    public suspend fun setNote(day: LocalDate, meal: Meal, note: String): DayMenu
+
+    /** The user's allergen preferences as configured in the canteen's settings. */
+    public suspend fun allergenSettings(): AllergenSettings
 
     public suspend fun orderHistory(): List<OrderRecord>
 

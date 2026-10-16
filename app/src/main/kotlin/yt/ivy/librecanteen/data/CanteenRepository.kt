@@ -9,6 +9,7 @@ import yt.ivy.librecanteen.core.CanteenException
 import yt.ivy.librecanteen.core.CanteenProvider
 import yt.ivy.librecanteen.core.icanteen.ICanteenClient
 import yt.ivy.librecanteen.core.model.AccountStatus
+import yt.ivy.librecanteen.core.model.AllergenSettings
 import yt.ivy.librecanteen.core.model.Credentials
 import yt.ivy.librecanteen.core.model.DayMenu
 import yt.ivy.librecanteen.core.model.Meal
@@ -24,6 +25,7 @@ data class Account(val address: String, val username: String)
  */
 class CanteenRepository(
     private val store: CredentialStore,
+    private val cache: MenuCache = NoMenuCache,
     private val providerFactory: (address: String) -> CanteenProvider = { ICanteenClient(ICanteenClient.normalizeBaseUrl(it)) },
 ) {
     private val _account = MutableStateFlow(store.load()?.let { Account(it.address, it.username) })
@@ -36,6 +38,7 @@ class CanteenRepository(
     /** @throws IllegalArgumentException for an unusable address. */
     suspend fun signIn(address: String, username: String, password: String) {
         val login = StoredLogin(address.trim(), username.trim(), password)
+        if (store.load()?.let { it.address != login.address || it.username != login.username } != false) cache.clear()
         val fresh = providerFactory(login.address)
         fresh.login(Credentials(login.username, login.password))
         sessionLock.withLock {
@@ -50,14 +53,24 @@ class CanteenRepository(
         val current = sessionLock.withLock { provider.also { provider = null; generation++ } }
         runCatching { current?.logout() }
         store.clear()
+        cache.clear()
         _account.value = null
     }
 
     suspend fun status(): AccountStatus = session { it.status() }
 
-    suspend fun menu(day: LocalDate): DayMenu = session { it.menu(day) }
+    suspend fun menu(day: LocalDate): DayMenu = session { it.menu(day) }.also(cache::put)
 
-    suspend fun order(day: LocalDate, meal: Meal): DayMenu = session(retry = false) { it.order(day, meal) }
+    /** Last menu seen for [day], without the operations needed to change it. */
+    fun cachedMenu(day: LocalDate): DayMenu? = cache.get(day)
+
+    suspend fun setNote(day: LocalDate, meal: Meal, note: String): DayMenu =
+        session(retry = false) { it.setNote(day, meal, note) }.also(cache::put)
+
+    suspend fun allergenSettings(): AllergenSettings = session { it.allergenSettings() }
+
+    suspend fun order(day: LocalDate, meal: Meal): DayMenu =
+        session(retry = false) { it.order(day, meal) }.also(cache::put)
 
     suspend fun orderHistory(): List<OrderRecord> = session { it.orderHistory() }
 

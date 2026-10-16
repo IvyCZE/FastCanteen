@@ -26,7 +26,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import yt.ivy.librecanteen.R
+import yt.ivy.librecanteen.data.AppSettings
 import yt.ivy.librecanteen.data.CanteenRepository
+import yt.ivy.librecanteen.reminders.Reminders
+import yt.ivy.librecanteen.ui.lock.AppLock
+import yt.ivy.librecanteen.ui.lock.LockScreen
 import yt.ivy.librecanteen.ui.history.HistoryScreen
 import yt.ivy.librecanteen.ui.history.HistoryViewModel
 import yt.ivy.librecanteen.ui.login.LoginScreen
@@ -37,7 +41,14 @@ import yt.ivy.librecanteen.ui.week.WeekScreen
 import yt.ivy.librecanteen.ui.week.WeekViewModel
 
 @Composable
-fun AppRoot(repository: CanteenRepository) {
+fun AppRoot(repository: CanteenRepository, settings: AppSettings, lock: AppLock) {
+    val lockEnabled by settings.biometricLock.collectAsStateWithLifecycle()
+    val locked by lock.locked.collectAsStateWithLifecycle()
+    if (lockEnabled && locked) {
+        LockScreen(onUnlock = { lock.authenticate() })
+        return
+    }
+
     val account by repository.account.collectAsStateWithLifecycle()
 
     if (account == null) {
@@ -46,7 +57,7 @@ fun AppRoot(repository: CanteenRepository) {
         LoginScreen(state, vm::signIn)
     } else {
         // Keyed by account so a different login never sees the previous user's screens.
-        androidx.compose.runtime.key(account) { MainScaffold(repository) }
+        androidx.compose.runtime.key(account) { MainScaffold(repository, settings, lock) }
     }
 }
 
@@ -57,11 +68,11 @@ private enum class Tab(val label: Int) {
 }
 
 @Composable
-private fun MainScaffold(repository: CanteenRepository) {
+private fun MainScaffold(repository: CanteenRepository, settings: AppSettings, lock: AppLock) {
     var selected by rememberSaveable { mutableIntStateOf(0) }
     val snackbar = remember { SnackbarHostState() }
 
-    val weekVm: WeekViewModel = viewModel(factory = viewModelFactory { initializer { WeekViewModel(repository) } })
+    val weekVm: WeekViewModel = viewModel(factory = viewModelFactory { initializer { WeekViewModel(repository, settings) } })
     val historyVm: HistoryViewModel = viewModel(factory = viewModelFactory { initializer { HistoryViewModel(repository) } })
     val settingsVm: SettingsViewModel = viewModel(factory = viewModelFactory { initializer { SettingsViewModel(repository) } })
 
@@ -103,6 +114,7 @@ private fun MainScaffold(repository: CanteenRepository) {
                         onPrevious = weekVm::previousWeek,
                         onNext = weekVm::nextWeek,
                         onAction = weekVm::apply,
+                        onNote = weekVm::saveNote,
                     )
                 }
                 Tab.History -> {
@@ -112,12 +124,42 @@ private fun MainScaffold(repository: CanteenRepository) {
                 Tab.Settings -> {
                     val account by repository.account.collectAsStateWithLifecycle()
                     val password by settingsVm.password.collectAsStateWithLifecycle()
+                    val biometricLock by settings.biometricLock.collectAsStateWithLifecycle()
+                    val reminders by settings.reminders.collectAsStateWithLifecycle()
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    val applyReminders = { enabled: Boolean ->
+                        settings.setReminders(enabled)
+                        Reminders.schedule(context, enabled)
+                    }
+                    val permission = androidx.activity.compose.rememberLauncherForActivityResult(
+                        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+                    ) { granted -> applyReminders(granted) }
                     SettingsScreen(
                         account = account,
                         password = password,
                         onChangePassword = settingsVm::changePassword,
                         onPasswordDialogClosed = settingsVm::resetPassword,
-                        onSignOut = settingsVm::signOut,
+                        onSignOut = {
+                            Reminders.schedule(context, false)
+                            settings.setReminders(false)
+                            settings.clearAccountData()
+                            settingsVm.signOut()
+                        },
+                        biometricAvailable = lock.available,
+                        biometricLock = biometricLock,
+                        onBiometricLock = { enable ->
+                            // Ask once now, so a user who cannot authenticate is never locked out.
+                            if (enable) lock.authenticate { ok -> if (ok) settings.setBiometricLock(true) }
+                            else settings.setBiometricLock(false)
+                        },
+                        reminders = reminders,
+                        onReminders = { enable ->
+                            if (enable && android.os.Build.VERSION.SDK_INT >= 33) {
+                                permission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                applyReminders(enable)
+                            }
+                        },
                     )
                 }
             }

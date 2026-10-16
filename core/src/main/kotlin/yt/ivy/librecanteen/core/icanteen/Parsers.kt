@@ -12,6 +12,7 @@ import yt.ivy.librecanteen.core.model.MealAction
 import yt.ivy.librecanteen.core.model.MealState
 import yt.ivy.librecanteen.core.model.MealTimings
 import yt.ivy.librecanteen.core.model.Money
+import yt.ivy.librecanteen.core.model.NoteAction
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -57,6 +58,7 @@ internal object DayMenuParser {
     private val QUANTITY = Regex("""(\d+)\s*ks""")
     private val ALLERGENS = Regex("""\(\s*(\d{1,2}[a-z]?(?:\s*,\s*\d{1,2}[a-z]?)*)\s*,?\s*\)""")
     private val PICKUP = Regex("""(\d{1,2}:\d{2}(?::\d{2})?)\D+(\d{1,2}:\d{2}(?::\d{2})?)""")
+    private val NOTE_ACTION = Regex("""'(db/dbProcessOrder\.jsp\?[^']*?type=note&note=)'\s*\+[^+]+\+\s*'([^']*)'""")
     private val LIMIT = Regex("""(\d+)\s*/\s*(\d+)""")
 
     fun parse(date: LocalDate, html: String): DayMenu {
@@ -128,6 +130,10 @@ internal object DayMenuParser {
             lockedReason = if (state == MealState.LOCKED || state == MealState.ORDERED_LOCKED) reason else null,
             timings = parseTimings(item),
             action = action,
+            inExchange = item.selectFirst("i.fa-exchange") != null,
+            note = item.selectFirst("input[id^=note][id$=text]")?.attr("value")?.trim(),
+            noteAction = item.selectFirst("input[id^=note][id$=submit]")?.attr("onclick")?.let { NOTE_ACTION.find(it) }
+                ?.let { NoteAction(it.groupValues[1], it.groupValues[2]) },
         )
     }
 

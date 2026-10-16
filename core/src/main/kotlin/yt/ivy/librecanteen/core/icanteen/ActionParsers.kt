@@ -2,6 +2,8 @@ package yt.ivy.librecanteen.core.icanteen
 
 import org.jsoup.Jsoup
 import yt.ivy.librecanteen.core.CanteenException
+import yt.ivy.librecanteen.core.model.Allergen
+import yt.ivy.librecanteen.core.model.AllergenSettings
 import yt.ivy.librecanteen.core.model.Money
 import yt.ivy.librecanteen.core.model.OrderRecord
 import yt.ivy.librecanteen.core.model.Payment
@@ -151,5 +153,22 @@ internal object PasswordFormParser {
             .find(html)?.groupValues?.get(1) ?: return null
         val items = Jsoup.parse(text).select("li").map { it.text().clean() }.filter { it.isNotEmpty() }
         return items.joinToString(" ").ifEmpty { Jsoup.parse(text).text().clean() }.ifEmpty { null }
+    }
+}
+
+internal object AllergenSettingsParser {
+    private val LABEL = Regex("""^(\d{1,2}[a-z]?)\s+-\s+(.*?)(?:\s+-\s*)?$""")
+
+    fun parse(html: String): AllergenSettings {
+        val form = Jsoup.parse(html).selectFirst("form#alergens")
+            ?: throw CanteenException.UnsupportedLayout("allergen form not found")
+        val allergens = form.select("input[type=checkbox]").map { box ->
+            val label = form.selectFirst("label[for=${box.id()}]")?.text()?.clean().orEmpty()
+            val match = LABEL.find(label) ?: throw CanteenException.UnsupportedLayout("allergen label: $label")
+            Allergen(match.groupValues[1], match.groupValues[2], box.hasAttr("checked"))
+        }
+        if (allergens.isEmpty()) throw CanteenException.UnsupportedLayout("allergen form has no allergens")
+        val mode = form.selectFirst("select option[selected]")?.attr("value")?.toIntOrNull() ?: 1
+        return AllergenSettings(allergens, mode)
     }
 }

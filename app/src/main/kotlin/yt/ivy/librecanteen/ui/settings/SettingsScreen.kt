@@ -15,6 +15,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -85,6 +86,11 @@ fun SettingsScreen(
     onChangePassword: (current: String, new: String) -> Unit,
     onPasswordDialogClosed: () -> Unit,
     onSignOut: () -> Unit,
+    biometricAvailable: Boolean,
+    biometricLock: Boolean,
+    onBiometricLock: (Boolean) -> Unit,
+    reminders: Boolean,
+    onReminders: (Boolean) -> Unit,
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -107,6 +113,17 @@ fun SettingsScreen(
             OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.settings_sign_out))
             }
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Section(stringResource(R.string.settings_app)) {
+            SwitchRow(stringResource(R.string.settings_reminders), stringResource(R.string.settings_reminders_hint), reminders, true, onReminders)
+            SwitchRow(
+                stringResource(R.string.settings_lock),
+                stringResource(if (biometricAvailable) R.string.settings_lock_hint else R.string.settings_lock_unavailable),
+                biometricLock,
+                biometricAvailable || biometricLock,
+                onBiometricLock,
+            )
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Section(stringResource(R.string.settings_about)) {
@@ -135,6 +152,17 @@ private fun Section(title: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
         content()
+    }
+}
+
+@Composable
+private fun SwitchRow(title: String, hint: String, checked: Boolean, enabled: Boolean, onChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyMedium)
+            Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(checked = checked, onCheckedChange = onChange, enabled = enabled)
     }
 }
 

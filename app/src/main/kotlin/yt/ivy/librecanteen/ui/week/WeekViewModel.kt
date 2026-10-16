@@ -3,6 +3,7 @@ package yt.ivy.librecanteen.ui.week
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
@@ -20,6 +21,7 @@ import yt.ivy.librecanteen.core.model.DayMenu
 import yt.ivy.librecanteen.core.model.Meal
 import yt.ivy.librecanteen.core.model.MealState
 import yt.ivy.librecanteen.core.model.Money
+import yt.ivy.librecanteen.data.AppSettings
 import yt.ivy.librecanteen.data.CanteenRepository
 import yt.ivy.librecanteen.ui.UiText
 import yt.ivy.librecanteen.ui.toUiText
@@ -37,6 +39,10 @@ data class WeekState(
     /** Set when nothing could be loaded at all; partial failures are reported as events. */
     val error: UiText? = null,
     val busy: Set<MealKey> = emptySet(),
+    /** Allergen codes the user selected in the canteen settings. */
+    val allergens: Set<String> = emptySet(),
+    /** Some days come from the cache, so nothing can be changed. */
+    val offline: Boolean = false,
 ) {
     val weekdays: List<LocalDate> get() = (0L..4L).map { monday.plusDays(it) }
 }
@@ -46,9 +52,10 @@ data class WeekEvent(val message: UiText, val undo: (() -> Unit)? = null)
 
 class WeekViewModel(
     private val repository: CanteenRepository,
+    private val settings: AppSettings,
     today: LocalDate = LocalDate.now(),
 ) : ViewModel() {
-    private val _state = MutableStateFlow(WeekState(monday = initialMonday(today)))
+    private val _state = MutableStateFlow(WeekState(monday = initialMonday(today), allergens = settings.allergenCodes))
     val state: StateFlow<WeekState> = _state.asStateFlow()
 
     private val events = Channel<WeekEvent>(Channel.BUFFERED)
@@ -64,20 +71,34 @@ class WeekViewModel(
         viewModelScope.launch {
             val (menus, status) = coroutineScope {
                 val statusJob = async { runCatching { repository.status() } }
+                val allergenJob = async { runCatching { repository.allergenSettings() } }
                 val dayJobs = (0L..4L).map { offset ->
                     val day = monday.plusDays(offset)
                     async { day to runCatching { repository.menu(day) } }
                 }
-                dayJobs.awaitAll() to statusJob.await()
+                val days = dayJobs.awaitAll()
+                allergenJob.await().getOrNull()?.selectedCodes?.let { codes ->
+                    settings.allergenCodes = codes
+                    _state.update { it.copy(allergens = codes) }
+                }
+                days to statusJob.await()
             }
             // The user may have moved to another week while this one was loading.
             if (_state.value.monday != monday) return@launch
 
-            val loaded = menus.mapNotNull { (day, result) -> result.getOrNull()?.let { day to it } }.toMap()
+            val live = menus.mapNotNull { (day, result) -> result.getOrNull()?.let { day to it } }.toMap()
             val failure = menus.firstNotNullOfOrNull { it.second.exceptionOrNull() }
+            // Only a lost connection falls back to old data; other failures must stay visible.
+            val cached = if (failure is CanteenException.Network) {
+                menus.filter { it.second.isFailure }.mapNotNull { (day, _) -> repository.cachedMenu(day)?.let { day to it } }.toMap()
+            } else {
+                emptyMap()
+            }
+            val loaded = live + cached
             _state.update { current ->
                 current.copy(
                     days = current.days + loaded,
+                    offline = cached.isNotEmpty(),
                     credit = status.getOrNull()?.credit ?: current.credit,
                     loading = false,
                     error = if (loaded.isEmpty() && failure != null) failure.toUiText() else null,
@@ -90,7 +111,7 @@ class WeekViewModel(
     }
 
     fun showWeek(monday: LocalDate) {
-        _state.update { WeekState(monday = monday, credit = it.credit) }
+        _state.update { WeekState(monday = monday, credit = it.credit, allergens = it.allergens) }
         load()
     }
 
@@ -100,16 +121,32 @@ class WeekViewModel(
 
     fun apply(day: LocalDate, meal: Meal) = apply(day, meal, offerUndo = true)
 
+    fun saveNote(day: LocalDate, meal: Meal, note: String) {
+        if (meal.noteAction == null) return
+        runOperation(day, meal) {
+            val updated = repository.setNote(day, meal, note)
+            _state.update { it.copy(days = it.days + (day to updated)) }
+            events.trySend(WeekEvent(UiText.Res(R.string.msg_note_saved)))
+        }
+    }
+
     private fun apply(day: LocalDate, meal: Meal, offerUndo: Boolean) {
+        if (meal.action == null) return
+        runOperation(day, meal) {
+            val updated = repository.order(day, meal)
+            _state.update { it.copy(days = it.days + (day to updated)) }
+            launch { runCatching { repository.status() }.getOrNull()?.let { s -> _state.update { it.copy(credit = s.credit) } } }
+            events.trySend(successEvent(day, meal, updated, offerUndo))
+        }
+    }
+
+    private fun runOperation(day: LocalDate, meal: Meal, block: suspend CoroutineScope.() -> Unit) {
         val key = MealKey(day, meal.course, meal.label)
         if (_state.value.busy.isNotEmpty()) return // operations are signed per page, so run them one at a time
         _state.update { it.copy(busy = it.busy + key) }
         viewModelScope.launch {
             try {
-                val updated = repository.order(day, meal)
-                _state.update { it.copy(days = it.days + (day to updated)) }
-                launch { runCatching { repository.status() }.getOrNull()?.let { s -> _state.update { it.copy(credit = s.credit) } } }
-                events.trySend(successEvent(day, meal, updated, offerUndo))
+                block()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: CanteenException.SessionExpired) {

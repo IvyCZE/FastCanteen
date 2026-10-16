@@ -1,0 +1,49 @@
+package yt.ivy.librecanteen.data
+
+import android.content.Context
+import android.content.SharedPreferences
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+/** Non-secret preferences. Credentials live in [CredentialVault], never here. */
+class AppSettings(private val prefs: SharedPreferences) {
+    constructor(context: Context) : this(context.getSharedPreferences("settings", Context.MODE_PRIVATE))
+
+    private val _biometricLock = MutableStateFlow(prefs.getBoolean(KEY_LOCK, false))
+    val biometricLock: StateFlow<Boolean> = _biometricLock.asStateFlow()
+
+    private val _reminders = MutableStateFlow(prefs.getBoolean(KEY_REMINDERS, false))
+    val reminders: StateFlow<Boolean> = _reminders.asStateFlow()
+
+    fun setBiometricLock(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_LOCK, enabled).apply()
+        _biometricLock.value = enabled
+    }
+
+    fun setReminders(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_REMINDERS, enabled).apply()
+        _reminders.value = enabled
+    }
+
+    /** ISO date of the Monday of the week the user was last reminded about. */
+    var lastReminderWeek: String?
+        get() = prefs.getString(KEY_LAST_REMINDER, null)
+        set(value) = prefs.edit().putString(KEY_LAST_REMINDER, value).apply()
+
+    /** Allergens the user selected in the canteen settings, kept for offline use. */
+    var allergenCodes: Set<String>
+        get() = prefs.getStringSet(KEY_ALLERGENS, emptySet()).orEmpty().toSet()
+        set(value) = prefs.edit().putStringSet(KEY_ALLERGENS, value).apply()
+
+    fun clearAccountData() {
+        prefs.edit().remove(KEY_LAST_REMINDER).remove(KEY_ALLERGENS).apply()
+    }
+
+    private companion object {
+        const val KEY_LOCK = "biometric_lock"
+        const val KEY_REMINDERS = "reminders"
+        const val KEY_LAST_REMINDER = "last_reminder_week"
+        const val KEY_ALLERGENS = "allergens"
+    }
+}

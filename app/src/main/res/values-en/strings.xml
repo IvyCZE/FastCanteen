@@ -68,4 +68,24 @@
     <string name="password_changed">Password changed.</string>
     <string name="password_confirm">Change</string>
     <string name="dialog_close">Close</string>
+    <string name="offline_banner">Offline. Showing the last loaded data, ordering is unavailable.</string>
+    <string name="in_exchange">In the exchange</string>
+    <string name="note_add">Note</string>
+    <string name="note_edit">Edit note</string>
+    <string name="note_title">Order note</string>
+    <string name="note_save">Save</string>
+    <string name="note_shown">Note: %1$s</string>
+    <string name="msg_note_saved">Note saved</string>
+
+    <string name="settings_app">App</string>
+    <string name="settings_reminders">Remind me to order</string>
+    <string name="settings_reminders_hint">From Thursday, warns when nothing is ordered for next week.</string>
+    <string name="settings_lock">App lock</string>
+    <string name="settings_lock_hint">Unlock with fingerprint, face or the device screen lock.</string>
+    <string name="settings_lock_unavailable">No biometric authentication is set up on this device.</string>
+    <string name="lock_prompt_title">Unlock LibreCanteen</string>
+    <string name="lock_unlock">Unlock</string>
+    <string name="channel_ordering">Ordering</string>
+    <string name="reminder_title">Nothing ordered for next week</string>
+    <string name="reminder_text">The menu is available. Open the app to order.</string>
 </resources>

@@ -68,4 +68,24 @@
     <string name="password_changed">Heslo bylo změněno.</string>
     <string name="password_confirm">Změnit</string>
     <string name="dialog_close">Zavřít</string>
+    <string name="offline_banner">Bez připojení. Zobrazuji naposledy načtená data, nelze objednávat.</string>
+    <string name="in_exchange">V burze</string>
+    <string name="note_add">Poznámka</string>
+    <string name="note_edit">Upravit poznámku</string>
+    <string name="note_title">Poznámka k objednávce</string>
+    <string name="note_save">Uložit</string>
+    <string name="note_shown">Poznámka: %1$s</string>
+    <string name="msg_note_saved">Poznámka uložena</string>
+
+    <string name="settings_app">Aplikace</string>
+    <string name="settings_reminders">Připomínat objednání</string>
+    <string name="settings_reminders_hint">Od čtvrtka upozorní, když nemáš objednáno na příští týden.</string>
+    <string name="settings_lock">Zámek aplikace</string>
+    <string name="settings_lock_hint">Odemykání otiskem, obličejem nebo zámkem zařízení.</string>
+    <string name="settings_lock_unavailable">V zařízení není nastavené biometrické ověření.</string>
+    <string name="lock_prompt_title">Odemknout LibreCanteen</string>
+    <string name="lock_unlock">Odemknout</string>
+    <string name="channel_ordering">Objednávání</string>
+    <string name="reminder_title">Nemáš objednáno na příští týden</string>
+    <string name="reminder_text">Jídelníček už je k dispozici, otevři aplikaci a objednej si.</string>
 </resources>

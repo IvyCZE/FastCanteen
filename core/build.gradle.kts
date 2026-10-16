@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -19,6 +20,7 @@ java {
 
 dependencies {
     api(libs.coroutines.core)
+    api(libs.serialization.json)
     implementation(libs.okhttp)
     implementation(libs.jsoup)
 
