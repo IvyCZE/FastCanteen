@@ -1,0 +1,348 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+
+
+
+
+
+
+
+
+<html>
+    <head>
+        <title>iCanteen - objednání stravy</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta http-equiv="Cache-control" content="no-cache, no-store, must-revalidate"/>
+        <meta http-equiv="Pragma" content="no-cache"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+        <meta name="HandheldFriendly" content="True"/>
+        <meta name="MobileOptimized" content="480"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+        
+        
+        
+            
+                <link rel='stylesheet' type='text/css' href='/fonts/open-sans/open-sans.css'>
+            
+            
+        
+
+        <link rel="shortcut icon" href="/img/favicon.ico" >
+        <link type="text/css" href="/css/style-2.22.24.css" rel="Stylesheet" >
+        <link rel="stylesheet" href="/fonts/fontawesome/css/all.min.css">
+        
+            <link type="text/css" href="/css/smoothness/jquery-ui.min.css" rel="Stylesheet" >
+            <link type="text/css" href="/css/ui.notify.css" rel="Stylesheet" >
+        
+        <link type="text/css" href="/css/jquery.lighter.css" rel="stylesheet" >
+        <link type="text/css" href="/css/fontawesome-stars.css" rel="stylesheet" >
+        
+        <script type="text/javascript" src="/js/jquery.min.js"></script>
+        <script type="text/javascript" src="/js/jquery-migrate.min.js"></script>
+        
+            <script type="text/javascript" src="/js/jquery-ui.min.js"></script>
+            <script type="text/javascript" src="/js/jquery.ui.datepicker-cs.js"></script>
+            <script type="text/javascript" src="/js/jquery.ui.datepicker-en.js"></script>
+            <script type="text/javascript" src="/js/jquery.notify.js"></script>
+        
+        <script type="text/javascript" src="/js/jquery.lighter.js"></script>
+        <script type="text/javascript" src="/js/jquery.barrating.min.js"></script>
+        <script type="text/JavaScript" src="/js/functions-2.22.24.js"></script>
+    </head>
+    
+    
+    
+                  
+    <body class="session-desktop">
+            
+        <script type="text/javascript">
+            <!--
+            var time = null;
+            var timer;
+            function move() {
+                document.reader.submit();
+            }
+
+            $.ajaxSetup({
+                cache: false,
+                statusCode: {
+                    401: function() {
+                        move();
+                    },
+                    403: function() {
+                        move();
+                    }
+                }
+            });
+            $(document).ready(function () {
+                if (typeof $.ui !== 'undefined') {
+                    $.datepicker.setDefaults($.datepicker.regional['cs']);
+                }
+                calculateRatings();
+
+                $(function () {
+                    $('#topContext').on('click', '.menuExpander', function () {
+                        $('.mobileMenu').slideToggle(350, function () {
+                            calculateHeight();
+                        });
+                    });
+                });
+
+                //calculateHeight();
+                calculateButtonsWidth();
+
+        
+                $(document).ajaxComplete(function () {
+                  //  calculateHeight();
+                    calculateButtonsWidth();
+                    calculateRatings();
+                    clearTimeout(timer);
+        
+                });
+                $("#code").focus();
+                tick();
+                if (typeof $.ui !== 'undefined') {
+                    $("#container").notify({
+                        speed: 500
+                    });
+                }
+
+                $(document).on('ajaxError', function (event, request, settings) {
+                    if (request.status === 401 || request.status === 403) {
+                        move();
+                    } else {
+                        showNotification('Stav objednávky', 'Při zpracování objednávky došlo k chybě na serveru. Zkuste znovu načíst aplikaci a opakujte operaci.');
+                    }
+                    ;
+                });
+            });
+            document.oncontextmenu = function() { return false };
+            if ($.ui !== undefined) {
+                
+                $(function () {
+                    $(document).tooltip({
+                        tooltipClass: "uitooltip"
+                    });
+                });
+                
+            }
+            //-->
+    </script>
+    <form name="reader" id="reader" style="margin:0px; display:inline;" method="POST" action="/logout?terminal=true&amp;keyboard=&amp;rating=&amp;printer=">
+        <input type="hidden" name="code" id="code">
+        <input type="hidden" name="_csrf" value="00000000-0000-0000-0000-000000000000"/> 
+    </form>
+    <div id="bodyContext" class="fitToScreen">
+<div class="noPrint topContext" id="topContext">
+    
+    <div class="topMenu topMenuMinWidth" style="padding-top: 0px; padding-bottom: 0px" role="banner">
+        <table style="width: 100%;"><tr>
+                <td class="statusBar statusBarMain">
+                    
+                        
+                        <span class="topMenuItem">čas: <span id="Clock" style="font-weight: bold;" >06:55.47</span></span>
+                        
+                    <span id="kreditInclude">
+
+
+
+
+    <span class="topMenuItem"> <span title="Průběžně aktualizovaný kredit, který zahrnuje všechny objednávky i na období budoucí. ">kredit</span>:
+        
+            
+            <span id="Kredit" tabindex="0" style="font-weight: bold; color: #99cc00;" title="1 160,00 limit účtu je&nbsp;0,00">1 160,00&nbsp;Kč</span>
+        
+        
+    </span>
+
+<span id="creditMeta"
+      data-credit="1160.0"
+      data-check-credit="false"
+      data-max-kredit="0.0"
+      style="display:none;"></span>
+
+</span>
+                    
+                        
+                            <span class="topMenuItem">objednáno do: <span id="PoslObj" style="font-weight: bold;">23.10.2026</span></span>
+                        
+                        
+                        
+                    
+                </td>
+                <td class="statusBar statusBarMain">
+                    
+                </td>                
+                <td class="statusBar statusBarRight">
+                    
+                        
+                            
+                            
+                        
+                        
+                        
+                        
+                    
+                    
+                        
+                    
+                    
+                    
+                        <a href="/web/audit" title="Audit log operací v systému"><i class="topMenuItem fa fa-file-alt fa-lg"></i></a>
+                        <a href="/web/info" title="Informace o jídelně"><i class="topMenuItem fa fa-info-circle fa-lg"></i></a>
+                        <a href="/web/setting" title="Možnosti nastavení systému"><i class="topMenuItem fa fa-cog fa-lg"></i></a>
+                    
+                    <span class="topMenuItem" title="Přihlašovací jméno: testuser" ><span id="top:status:firstName">Jan</span>&nbsp;<span id="top:status:lastName">Novák</span></span>
+                    
+                </td></tr></table>                                        
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+        <div class="topMenu topMenuMinWidth noPrint" role="navigation">
+            <table width="100%" border="0" cellspacing="2" cellpadding="0" style="table-layout: fixed;">
+                <tr>
+                    
+                    <td class="mainMenu" title="Jídelníček na jeden den s měsíčním kalendářem"><a href="/faces/secured/main.jsp"><span class="mainMenuItem"><i class="far fa-calendar-day fa-2x"></i><span class="mainMenuText">denní</span></span></a></td>
+                    <td class="mainMenu" title="Jídelníček na jeden den s týdenním kalendářem"><a href="/faces/secured/week.jsp?week=0&amp;terminal=&amp;keyboard=&amp;printer="><span class="mainMenuItem"><i class="far fa-calendar-week fa-2x"></i><span class="mainMenuText">týdenní</span></span></a></td>
+                    <td class="mainMenu" title="Jídelníček se všemi schválenými dny"><a href="/faces/secured/month.jsp"><span class="mainMenuItem"><i class="far fa-calendar-alt fa-2x"></i><span class="mainMenuText">měsíční</span></span></a></td>
+                    <td class="mainMenu" title="Můžete převzít jídlo jiného strávníka z burzy jídel"><a href="/faces/secured/burza.jsp"><span class="mainMenuItem"><i class="fad fa-exchange fa-2x"></i><span class="mainMenuText">burza</span></span></a></td>
+                    <td class="mainMenu" title="Historie plateb"><a href="/faces/secured/platby.jsp"><span class="mainMenuItem"><i class="far fa-money-bill-alt fa-2x"></i><span class="mainMenuText">platby</span></span></a></td>
+                    <td class="mainMenu" title="Detaily objednávek včetně popisu jídla"><a href="/faces/secured/objednavky.jsp"><span class="mainMenuItem"><i class="far fa-shopping-cart fa-2x"></i><span class="mainMenuText">objednávky</span></span></a></td>
+                    <td class="mainMenu" title="Přehled plateb a objednávek"><a href="/faces/secured/historie.jsp"><span class="mainMenuItem"><i class="far fa-history fa-2x"></i><span class="mainMenuText">historie</span></span></a></td>
+                    
+                    <td class="mainMenu" title="Odhlášení uživatele ze systému"><a href="#" onclick="document.getElementById('logout').submit();"><span class="mainMenuItem"><i class="fa fa-sign-out-alt fa-2x"></i><span class="mainMenuText">odhlásit</span></span></a></td>
+                    <form name="logout" id="logout" method="POST" action="/logout?terminal=&amp;keyboard=&amp;printer=">
+                        <input type="hidden" name="_csrf" value="00000000-0000-0000-0000-000000000000"/> 
+                    </form>
+                
+                </tr>
+            </table>
+        </div>
+            
+        <div class="bkg"></div>
+    
+         
+
+
+
+
+
+
+  
+
+
+
+
+</div><div class="mainContext mainContextMinWidth" id="mainContext">
+    <span class="noPrint">
+        
+            <form id="content:filterDateForm" name="content:filterDateForm" method="post" action="/faces/secured/platby.jsp" enctype="application/x-www-form-urlencoded" style="padding: 12px;"><label for="content:filterDateForm:startDate">Zobrazit pouze platby od: </label><input id="content:filterDateForm:startDate" name="content:filterDateForm:startDate" type="text" value="01.04.2026" maxlength="10" class="form-control input" /><label for="content:filterDateForm:startDate">do: </label><input id="content:filterDateForm:endDate" name="content:filterDateForm:endDate" type="text" value="30.11.2026" maxlength="10" class="form-control input" /> <input id="content:filterDateForm:j_id_jsp_965498064_29pc4" name="content:filterDateForm:j_id_jsp_965498064_29pc4" type="submit" value="Filtrovat platby" class="btn btn-primary button" />
+            <input type="hidden" name="_csrf" value="00000000-0000-0000-0000-000000000000"/> 
+        <input type="hidden" name="content:filterDateForm_SUBMIT" value="1" /><input type="hidden" name="javax.faces.ViewState" id="javax.faces.ViewState" value="VIEWSTATE" /></form>
+    </span>
+    <span class="noScreen">
+        <table class="center"><tbody><tr class="printSummaryRow"><td>od: 01.04.2026</td><td>do: 30.11.2026</td></tr>
+<tr class="printSummaryRow"><td>jméno: Petr</td><td>příjmení: Novák</td></tr>
+</tbody></table>
+    </span>
+
+     
+    <table class="tableDataShow">
+        <tr class="bold">
+            <td>datum</td>
+            <td align="left">způsob platby</td>
+            <td align="left">druh platby</td>
+            <td align="right">částka</td>
+            <td align="left">poznámka</td>
+        </tr>
+        
+              
+            <tr>
+                <td>12.10.2026</td>
+                <td align="left">Sporožiro</td>
+                <td align="left">Stravné</td>
+                <td align="right">1 000,00 Kč</td>
+                <td align="left">  </td>
+            </tr>		
+        
+              
+            <tr>
+                <td>31.08.2026</td>
+                <td align="left">Převod zůstatku</td>
+                <td align="left">Záloha za čip</td>
+                <td align="right">120,00 Kč</td>
+                <td align="left">Poznámka k platbě  </td>
+            </tr>		
+        
+              
+            <tr>
+                <td>31.08.2026</td>
+                <td align="left">Převod zůstatku</td>
+                <td align="left">Stravné</td>
+                <td align="right">475,00 Kč</td>
+                <td align="left">Poznámka k platbě  </td>
+            </tr>		
+        
+    </table>
+    
+    
+        <script type="text/JavaScript">
+            initDesktopDatepickers('content:filterDateForm:startDate', 'content:filterDateForm:endDate');
+            $("#content\\:ipsForm\\:amount").on("keypress", function(e) {
+            if (e.which != 8 && e.which != 0 && (e.which < 48 || e.which > 57)) {
+            return false;
+            }
+            });
+        </script>
+    
+    
+
+    
+    
+        <script type="text/javascript">initLogoutConfirmDialog();</script>
+    
+    
+    
+        <div class="help noPrint" title="Zobrazí nápovědu a popis funkcí programu"><a href="/help" alt="Otevřít nápovědu"><i class="fa fa-question fa-2x"></i></a></div>
+    
+    <input type="checkbox" id="showPrinter"  style="visibility:hidden">
+    <input type="checkbox" id="showKeyboard"  style="visibility:hidden">
+    <div align="center" class="topMenu topMenuMinWidth bottomBar textGrey noPrint" role="contentinfo"><a href="mobile.jsp"><i class="far fa-mobile"></i> Mobilní zobrazení</a> |  Změna jídelníčku vyhrazena. | iCanteen 2.22.24
+        
+            | &copy; <a href="https://www.z-ware.cz">Z-WARE s.r.o.</a> 2003-2026
+    </div>
+</div>
+
+
+
+  
+
+
+
+
+</div>
+
+
+
+
+
+    <div id="container">
+        <div id="basic-template" style="color:#FFFFCC">
+            <a class="ui-notify-cross ui-notify-close" href="#">x</a>
+            <h1>#{title}</h1>
+            <p>#{text}</p>
+        </div>
+    </div>
+
+</body>
+</html>

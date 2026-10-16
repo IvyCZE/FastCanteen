@@ -1,6 +1,8 @@
 package yt.ivy.librecanteen.core.icanteen
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.Cookie
 import okhttp3.CookieJar
@@ -13,21 +15,30 @@ import okhttp3.Response
 import yt.ivy.librecanteen.core.CanteenException
 import yt.ivy.librecanteen.core.CanteenProvider
 import yt.ivy.librecanteen.core.model.AccountStatus
+import yt.ivy.librecanteen.core.model.ActionType
 import yt.ivy.librecanteen.core.model.Credentials
 import yt.ivy.librecanteen.core.model.DayMenu
+import yt.ivy.librecanteen.core.model.Meal
+import yt.ivy.librecanteen.core.model.MealState
+import yt.ivy.librecanteen.core.model.OrderRecord
+import yt.ivy.librecanteen.core.model.Payment
 import java.io.IOException
 import java.time.LocalDate
 
 /**
  * Scrapes an iCanteen installation. Everything is read from server-rendered HTML,
  * so unknown markup is reported as [CanteenException.UnsupportedLayout] instead of being guessed.
+ *
+ * Operations that change state are serialized, and their outcome is checked against the server
+ * rather than assumed, because the canteen answers them with loosely structured fragments.
  */
 public class ICanteenClient(
     private val baseUrl: HttpUrl,
-    httpClient: OkHttpClient = OkHttpClient(),
+    private val httpClient: OkHttpClient = OkHttpClient(),
 ) : CanteenProvider {
 
     private val http = httpClient.newBuilder().cookieJar(MemoryCookieJar()).build()
+    private val mutations = Mutex()
 
     override suspend fun login(credentials: Credentials) {
         val loginPage = fetch(url("login"), checkSession = false)
@@ -47,27 +58,79 @@ public class ICanteenClient(
 
     override suspend fun logout() {
         val page = fetch(url("faces/secured/main.jsp"))
-        val csrf = LoginPageParser.csrfToken(page)
-        val form = FormBody.Builder().add("_csrf", csrf).build()
+        val form = FormBody.Builder().add("_csrf", LoginPageParser.csrfToken(page)).build()
         call(Request.Builder().url(url("logout")).post(form).build()) { }
     }
 
     override suspend fun status(): AccountStatus =
         StatusParser.parse(fetch(url("faces/secured/main.jsp")))
 
-    override suspend fun menu(day: LocalDate): DayMenu {
-        val url = url("faces/secured/db/dbJidelnicekOnDayView.jsp") {
-            addQueryParameter("day", day.toString())
-            addQueryParameter("terminal", "false")
-            addQueryParameter("rating", "")
-            addQueryParameter("printer", "false")
-            addQueryParameter("keyboard", "false")
+    override suspend fun menu(day: LocalDate): DayMenu = DayMenuParser.parse(day, fetch(dayUrl(day)))
+
+    override suspend fun order(day: LocalDate, meal: Meal): DayMenu = mutations.withLock {
+        val action = meal.action
+        require(action != null && meal.state in ORDERABLE_STATES) { "Meal cannot be changed: ${meal.state}" }
+        if (!action.path.startsWith(ORDER_ENDPOINT)) {
+            throw CanteenException.UnsupportedLayout("unexpected order operation")
         }
-        return DayMenuParser.parse(day, fetch(url))
+
+        OrderResponseParser.check(fetch("${baseUrl}faces/secured/${action.path}".toHttpUrl()))
+
+        val updated = DayMenuParser.parse(day, fetch(dayUrl(day)))
+        val after = updated.meals.firstOrNull { it.label == meal.label && it.course == meal.course }
+        val applied = when (action.type) {
+            ActionType.MAKE, ActionType.REORDER ->
+                after?.state == MealState.ORDERED || after?.state == MealState.ORDERED_LOCKED
+            ActionType.DELETE ->
+                after != null && after.state != MealState.ORDERED && after.state != MealState.ORDERED_LOCKED
+            else -> false
+        }
+        if (!applied) throw CanteenException.OrderNotApplied()
+        updated
+    }
+
+    override suspend fun orderHistory(): List<OrderRecord> =
+        OrderHistoryParser.parse(fetch(url("faces/secured/objednavky.jsp")))
+
+    override suspend fun payments(): List<Payment> =
+        PaymentsParser.parse(fetch(url("faces/secured/platby.jsp")))
+
+    override suspend fun changePassword(current: Credentials, newPassword: String): Unit = mutations.withLock {
+        require(newPassword.isNotBlank()) { "New password is empty" }
+        require(newPassword != current.password) { "New password equals the current one" }
+
+        val settingsUrl = url("web/setting")
+        val hidden = PasswordFormParser.hiddenFields(fetch(settingsUrl))
+        val form = FormBody.Builder().apply {
+            hidden.forEach { (name, value) -> add(name, value) }
+            add("passwordSetting:StravnikPasswordCurrent", current.password)
+            add("passwordSetting:StravnikPassword", newPassword)
+            add("passwordSetting:StravnikPasswordSecond", newPassword)
+            add("passwordSetting:confirm", "Změnit heslo")
+        }.build()
+        val response = call(Request.Builder().url(settingsUrl).post(form).build()) { it.body.string() }
+        val message = PasswordFormParser.resultMessage(response)
+
+        // The result message is free text, so the outcome is decided by whether the new password works.
+        val verifier = ICanteenClient(baseUrl, httpClient)
+        try {
+            verifier.login(Credentials(current.username, newPassword))
+        } catch (_: CanteenException.AuthenticationFailed) {
+            throw CanteenException.PasswordChangeRejected(message ?: "The canteen did not accept the new password")
+        }
+        runCatching { verifier.logout() }
     }
 
     private fun url(path: String, configure: HttpUrl.Builder.() -> Unit = {}): HttpUrl =
         baseUrl.newBuilder().addPathSegments(path).apply(configure).build()
+
+    private fun dayUrl(day: LocalDate): HttpUrl = url("faces/secured/db/dbJidelnicekOnDayView.jsp") {
+        addQueryParameter("day", day.toString())
+        addQueryParameter("terminal", "false")
+        addQueryParameter("rating", "")
+        addQueryParameter("printer", "false")
+        addQueryParameter("keyboard", "false")
+    }
 
     private suspend fun fetch(url: HttpUrl, checkSession: Boolean = true): String =
         call(Request.Builder().url(url).get().build()) { response ->
@@ -91,6 +154,9 @@ public class ICanteenClient(
         }
 
     public companion object {
+        private const val ORDER_ENDPOINT = "db/dbProcessOrder.jsp?"
+        private val ORDERABLE_STATES = setOf(MealState.ORDERED, MealState.ORDERABLE, MealState.REORDERABLE)
+
         /**
          * Accepts what users type or paste: `jidelna.example.cz`, `https://jidelna.example.cz/`
          * or an installation under a sub-path such as `https://host/demo`.

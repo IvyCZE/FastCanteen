@@ -55,7 +55,7 @@ internal object DayMenuParser {
     private val ACTION_URL = Regex("""ajaxOrder\(\s*\w+\s*,\s*'([^']+)'""")
     private val TYPE_PARAM = Regex("""[?&]type=([^&]*)""")
     private val QUANTITY = Regex("""(\d+)\s*ks""")
-    private val ALLERGENS = Regex("""\(\s*([0-9a-z]+(?:\s*,\s*[0-9a-z]+)*)\s*\)""")
+    private val ALLERGENS = Regex("""\(\s*(\d{1,2}[a-z]?(?:\s*,\s*\d{1,2}[a-z]?)*)\s*,?\s*\)""")
     private val PICKUP = Regex("""(\d{1,2}:\d{2}(?::\d{2})?)\D+(\d{1,2}:\d{2}(?::\d{2})?)""")
     private val LIMIT = Regex("""(\d+)\s*/\s*(\d+)""")
 
@@ -131,7 +131,7 @@ internal object DayMenuParser {
         )
     }
 
-    internal fun parseDishes(description: String): List<Dish> =
+    fun parseDishes(description: String): List<Dish> =
         description.split(';').mapNotNull { part ->
             val allergens = ALLERGENS.findAll(part).flatMap { m ->
                 m.groupValues[1].split(',').map { it.trim() }

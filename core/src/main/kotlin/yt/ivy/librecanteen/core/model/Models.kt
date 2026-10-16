@@ -80,3 +80,25 @@ public data class Meal(
 
 /** A day's menu. [meals] is empty when the canteen has no menu for [date]. */
 public data class DayMenu(val date: LocalDate, val meals: List<Meal>)
+
+/** One line of the order history. */
+public data class OrderRecord(
+    val date: LocalDate,
+    val label: String,
+    val dishes: List<Dish>,
+    val orderedAt: LocalDateTime?,
+    /** Channel the order came through as reported by the canteen, e.g. "Internet". */
+    val orderedVia: String?,
+    val pickupPoint: String,
+    val orderedCount: Int,
+    val issuedCount: Int,
+    val price: Money?,
+)
+
+public data class Payment(
+    val date: LocalDate,
+    val method: String,
+    val kind: String,
+    val amount: Money,
+    val note: String,
+)
