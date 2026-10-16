@@ -96,13 +96,14 @@ public class ICanteenClient(
             throw CanteenException.UnsupportedLayout("unexpected note operation")
         }
 
-        val body = fetch("${baseUrl}faces/secured/${action.path(note.trim())}".toHttpUrl())
+        val clean = sanitizeNote(note)
+        val body = fetch("${baseUrl}faces/secured/${action.path(clean)}".toHttpUrl())
         // Refusals are JSON; the shape of a success is not relied on, the re-read below decides.
         if (body.trim().startsWith("{")) OrderResponseParser.check(body)
 
         val updated = DayMenuParser.parse(day, fetch(dayUrl(day)))
         val after = updated.meals.firstOrNull { it.label == meal.label && it.course == meal.course }
-        if (after?.note != note.trim()) throw CanteenException.OrderNotApplied()
+        if (after?.note != clean) throw CanteenException.OrderNotApplied()
         updated
     }
 
@@ -174,6 +175,12 @@ public class ICanteenClient(
         }
 
     public companion object {
+        /**
+         * The canteen cuts everything from a `<` that opens a tag-like word, which would make the stored
+         * note differ from what the user typed, so `<` is dropped up front.
+         */
+        public fun sanitizeNote(note: String): String = note.replace("<", "").replace(Regex("[\\r\\n]+"), " ").trim()
+
         private const val ORDER_ENDPOINT = "db/dbProcessOrder.jsp?"
         private val ORDERABLE_STATES = setOf(MealState.ORDERED, MealState.ORDERABLE, MealState.REORDERABLE)
 

@@ -2,6 +2,7 @@ package yt.ivy.librecanteen.core.icanteen
 
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
+import org.jsoup.parser.Parser
 import yt.ivy.librecanteen.core.CanteenException
 import yt.ivy.librecanteen.core.model.AccountStatus
 import yt.ivy.librecanteen.core.model.ActionType
@@ -131,7 +132,8 @@ internal object DayMenuParser {
             timings = parseTimings(item),
             action = action,
             inExchange = item.selectFirst("i.fa-exchange") != null,
-            note = item.selectFirst("input[id^=note][id$=text]")?.attr("value")?.trim(),
+            // The canteen stores notes HTML-escaped and escapes them again in the input, so one more decode is needed.
+            note = item.selectFirst("input[id^=note][id$=text]")?.attr("value")?.let { Parser.unescapeEntities(it, false) }?.trim(),
             noteAction = item.selectFirst("input[id^=note][id$=submit]")?.attr("onclick")?.let { NOTE_ACTION.find(it) }
                 ?.let { NoteAction(it.groupValues[1], it.groupValues[2]) },
         )

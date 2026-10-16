@@ -294,6 +294,8 @@ private fun MealRow(
     }
 }
 
+private const val NOTE_MAX_LENGTH = 200
+
 @Composable
 private fun NoteDialog(initial: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
     var text by remember { mutableStateOf(initial) }
@@ -303,7 +305,7 @@ private fun NoteDialog(initial: String, onSave: (String) -> Unit, onDismiss: () 
         text = {
             OutlinedTextField(
                 value = text,
-                onValueChange = { text = it.replace('\n', ' ') },
+                onValueChange = { text = it.replace("<", "").replace('\n', ' ').take(NOTE_MAX_LENGTH) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )

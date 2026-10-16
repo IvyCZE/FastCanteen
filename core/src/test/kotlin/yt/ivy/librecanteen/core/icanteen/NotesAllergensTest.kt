@@ -30,6 +30,21 @@ class NotesAllergensTest {
     }
 
     @Test
+    fun `stored note is decoded twice because the canteen escapes it twice`() {
+        // Captured from the live canteen: the note `a&b =c "d"` comes back like this inside the input's value attribute.
+        val stored = "a&amp;amp;b &amp;#61;c &amp;#34;d&amp;#34;"
+        val html = fixture("day_ordered.html").replace("placeholder=\"Zadejte poznámku k objednávce\" value=\"\"", "placeholder=\"x\" value=\"$stored\"")
+        val meal = DayMenuParser.parse(LocalDate.of(2026, 10, 20), html).meals[0]
+        assertEquals("a&b =c \"d\"", meal.note)
+    }
+
+    @Test
+    fun `sanitized note drops angle bracket openers and line breaks`() {
+        assertEquals("1  2", ICanteenClient.sanitizeNote("1 < 2"))
+        assertEquals("a b", ICanteenClient.sanitizeNote("  a\nb  "))
+    }
+
+    @Test
     fun `meal without an order has no note operation`() {
         val meal = DayMenuParser.parse(LocalDate.of(2026, 10, 20), fixture("day_ordered.html")).meals[1]
         assertNull(meal.noteAction)
