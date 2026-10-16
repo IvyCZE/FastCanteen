@@ -110,6 +110,27 @@ public class ICanteenClient(
     override suspend fun allergenSettings(): AllergenSettings =
         AllergenSettingsParser.parse(fetch(url("web/setting")))
 
+    override suspend fun saveAllergenSettings(codes: Set<String>, displayMode: Int): AllergenSettings = mutations.withLock {
+        require(displayMode in 1..6) { "Unknown display mode" }
+        val settingsUrl = url("web/setting")
+        val form = AllergenSettingsParser.parseForm(fetch(settingsUrl))
+        val unknown = codes - form.fieldByCode.keys
+        require(unknown.isEmpty()) { "Unknown allergens: $unknown" }
+
+        val body = FormBody.Builder().apply {
+            form.hidden.forEach { (name, value) -> add(name, value) }
+            codes.forEach { add(form.fieldByCode.getValue(it), "true") }
+            add(form.modeField, displayMode.toString())
+            add("alergens:confirm", "Uložit")
+        }.build()
+        call(Request.Builder().url(settingsUrl).post(body).build()) { it.body.string() }
+
+        // The response is only a notification, so the stored values are read back.
+        val after = AllergenSettingsParser.parse(fetch(settingsUrl))
+        if (after.selectedCodes != codes || after.displayMode != displayMode) throw CanteenException.OrderNotApplied()
+        after
+    }
+
     override suspend fun orderHistory(): List<OrderRecord> =
         OrderHistoryParser.parse(fetch(url("faces/secured/objednavky.jsp")))
 

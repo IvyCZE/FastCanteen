@@ -69,6 +69,9 @@ class CanteenRepository(
 
     suspend fun allergenSettings(): AllergenSettings = session { it.allergenSettings() }
 
+    suspend fun saveAllergenSettings(codes: Set<String>, displayMode: Int): AllergenSettings =
+        session(retry = false) { it.saveAllergenSettings(codes, displayMode) }
+
     suspend fun order(day: LocalDate, meal: Meal): DayMenu =
         session(retry = false) { it.order(day, meal) }.also(cache::put)
 

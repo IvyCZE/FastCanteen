@@ -88,4 +88,7 @@
     <string name="channel_ordering">Ordering</string>
     <string name="reminder_title">Nothing ordered for next week</string>
     <string name="reminder_text">The menu is available. Open the app to order.</string>
+    <string name="settings_allergens">My allergens</string>
+    <string name="allergens_hint">Saved in the canteen. Dishes with the selected allergens are highlighted in the menu.</string>
+    <string name="allergens_saved">Allergens saved.</string>
 </resources>

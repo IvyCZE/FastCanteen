@@ -43,6 +43,14 @@ public interface CanteenProvider {
     /** The user's allergen preferences as configured in the canteen's settings. */
     public suspend fun allergenSettings(): AllergenSettings
 
+    /**
+     * Stores the selected allergen [codes] and [displayMode] (the canteen's option number, 1 to 6)
+     * and returns the settings as the server now reports them.
+     *
+     * @throws CanteenException.OrderNotApplied if the stored settings differ afterwards.
+     */
+    public suspend fun saveAllergenSettings(codes: Set<String>, displayMode: Int): AllergenSettings
+
     public suspend fun orderHistory(): List<OrderRecord>
 
     public suspend fun payments(): List<Payment>

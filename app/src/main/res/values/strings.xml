@@ -88,4 +88,7 @@
     <string name="channel_ordering">Objednávání</string>
     <string name="reminder_title">Nemáš objednáno na příští týden</string>
     <string name="reminder_text">Jídelníček už je k dispozici, otevři aplikaci a objednej si.</string>
+    <string name="settings_allergens">Moje alergeny</string>
+    <string name="allergens_hint">Uloží se do jídelny. Jídla s vybranými alergeny se v jídelníčku zvýrazní.</string>
+    <string name="allergens_saved">Alergeny byly uloženy.</string>
 </resources>

@@ -70,6 +70,11 @@ private class FakeCanteen : CanteenProvider {
         return AllergenSettings(emptyList(), 1)
     }
 
+    override suspend fun saveAllergenSettings(codes: Set<String>, displayMode: Int): AllergenSettings {
+        requireSession()
+        return AllergenSettings(emptyList(), displayMode)
+    }
+
     override suspend fun orderHistory(): List<OrderRecord> = emptyList()
 
     override suspend fun payments(): List<Payment> = emptyList()

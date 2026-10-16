@@ -55,7 +55,7 @@ class WeekViewModel(
     private val settings: AppSettings,
     today: LocalDate = LocalDate.now(),
 ) : ViewModel() {
-    private val _state = MutableStateFlow(WeekState(monday = initialMonday(today), allergens = settings.allergenCodes))
+    private val _state = MutableStateFlow(WeekState(monday = initialMonday(today), allergens = settings.allergenCodes.value))
     val state: StateFlow<WeekState> = _state.asStateFlow()
 
     private val events = Channel<WeekEvent>(Channel.BUFFERED)
@@ -63,6 +63,9 @@ class WeekViewModel(
 
     init {
         load()
+        viewModelScope.launch {
+            settings.allergenCodes.collect { codes -> _state.update { it.copy(allergens = codes) } }
+        }
     }
 
     fun load() {
@@ -78,8 +81,7 @@ class WeekViewModel(
                 }
                 val days = dayJobs.awaitAll()
                 allergenJob.await().getOrNull()?.selectedCodes?.let { codes ->
-                    settings.allergenCodes = codes
-                    _state.update { it.copy(allergens = codes) }
+                    settings.setAllergenCodes(codes)
                 }
                 days to statusJob.await()
             }

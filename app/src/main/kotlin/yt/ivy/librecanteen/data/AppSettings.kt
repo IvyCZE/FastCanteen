@@ -31,13 +31,19 @@ class AppSettings(private val prefs: SharedPreferences) {
         get() = prefs.getString(KEY_LAST_REMINDER, null)
         set(value) = prefs.edit().putString(KEY_LAST_REMINDER, value).apply()
 
+    private val _allergenCodes = MutableStateFlow(prefs.getStringSet(KEY_ALLERGENS, emptySet()).orEmpty().toSet())
+
     /** Allergens the user selected in the canteen settings, kept for offline use. */
-    var allergenCodes: Set<String>
-        get() = prefs.getStringSet(KEY_ALLERGENS, emptySet()).orEmpty().toSet()
-        set(value) = prefs.edit().putStringSet(KEY_ALLERGENS, value).apply()
+    val allergenCodes: StateFlow<Set<String>> = _allergenCodes.asStateFlow()
+
+    fun setAllergenCodes(codes: Set<String>) {
+        prefs.edit().putStringSet(KEY_ALLERGENS, codes).apply()
+        _allergenCodes.value = codes
+    }
 
     fun clearAccountData() {
         prefs.edit().remove(KEY_LAST_REMINDER).remove(KEY_ALLERGENS).apply()
+        _allergenCodes.value = emptySet()
     }
 
     private companion object {

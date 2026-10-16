@@ -74,7 +74,7 @@ private fun MainScaffold(repository: CanteenRepository, settings: AppSettings, l
 
     val weekVm: WeekViewModel = viewModel(factory = viewModelFactory { initializer { WeekViewModel(repository, settings) } })
     val historyVm: HistoryViewModel = viewModel(factory = viewModelFactory { initializer { HistoryViewModel(repository) } })
-    val settingsVm: SettingsViewModel = viewModel(factory = viewModelFactory { initializer { SettingsViewModel(repository) } })
+    val settingsVm: SettingsViewModel = viewModel(factory = viewModelFactory { initializer { SettingsViewModel(repository, settings) } })
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -124,6 +124,7 @@ private fun MainScaffold(repository: CanteenRepository, settings: AppSettings, l
                 Tab.Settings -> {
                     val account by repository.account.collectAsStateWithLifecycle()
                     val password by settingsVm.password.collectAsStateWithLifecycle()
+                    val allergens by settingsVm.allergens.collectAsStateWithLifecycle()
                     val biometricLock by settings.biometricLock.collectAsStateWithLifecycle()
                     val reminders by settings.reminders.collectAsStateWithLifecycle()
                     val context = androidx.compose.ui.platform.LocalContext.current
@@ -152,6 +153,10 @@ private fun MainScaffold(repository: CanteenRepository, settings: AppSettings, l
                             if (enable) lock.authenticate { ok -> if (ok) settings.setBiometricLock(true) }
                             else settings.setBiometricLock(false)
                         },
+                        allergens = allergens,
+                        onOpenAllergens = settingsVm::loadAllergens,
+                        onSaveAllergens = settingsVm::saveAllergens,
+                        onCloseAllergens = settingsVm::closeAllergens,
                         reminders = reminders,
                         onReminders = { enable ->
                             if (enable && android.os.Build.VERSION.SDK_INT >= 33) {

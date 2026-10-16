@@ -149,4 +149,40 @@ class ICanteenClientMutationsTest {
         assertFailsWith<IllegalArgumentException> { client.changePassword(Credentials("u", "old"), "  ") }
         assertEquals(0, server.requestCount)
     }
+
+    @Test
+    fun `saving allergens posts the form with its hidden fields and confirms by reading it back`() = runTest {
+        val saved = AllergenSettingsParser.parse(fixture("allergens_form.html"))
+        server.enqueue(ok(fixture("allergens_form.html")))
+        server.enqueue(ok("<html></html>"))
+        server.enqueue(ok(fixture("allergens_form.html")))
+
+        val result = client.saveAllergenSettings(saved.selectedCodes, saved.displayMode)
+
+        assertEquals(saved.selectedCodes, result.selectedCodes)
+        server.takeRequest()
+        val post = server.takeRequest()
+        assertEquals("POST /web/setting HTTP/1.1", post.requestLine)
+        val body = post.body!!.utf8()
+        assertTrue("_csrf=00000000-0000-0000-0000-000000000000" in body, body)
+        assertTrue("alergens%3AalergenyFirst%3A0%3AshowAlergens=true" in body, body)
+        assertTrue("alergens_SUBMIT=1" in body, body)
+    }
+
+    @Test
+    fun `allergens that the canteen did not store are reported`() = runTest {
+        server.enqueue(ok(fixture("allergens_form.html")))
+        server.enqueue(ok("<html></html>"))
+        server.enqueue(ok(fixture("allergens_form.html")))
+
+        assertFailsWith<CanteenException.OrderNotApplied> { client.saveAllergenSettings(setOf("2"), 3) }
+    }
+
+    @Test
+    fun `unknown allergen codes are refused before anything is sent`() = runTest {
+        server.enqueue(ok(fixture("allergens_form.html")))
+
+        assertFailsWith<IllegalArgumentException> { client.saveAllergenSettings(setOf("99"), 3) }
+        assertEquals(1, server.requestCount)
+    }
 }

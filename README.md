@@ -15,14 +15,14 @@ a calm, fast interface for the weekly menu, one-tap ordering, credit, payments a
 - Change password (confirmed by logging in with the new one)
 - Sign-in is remembered; the login is stored encrypted with a non-exportable Android Keystore key
 - Order notes
-- Dishes containing your allergens (as set in the canteen's own settings) are highlighted
+- Dishes containing your allergens are highlighted; the selection is edited in the app and stored in the canteen
 - Offline cache: the last loaded menus stay readable without a connection (ordering is disabled)
 - Optional reminder from Thursday when nothing is ordered for next week
 - Optional app lock with biometrics or the device screen lock
 - Czech and English, light and dark theme
 
-Not implemented yet: multiple portions, the meal exchange (burza; orders already in it are only flagged),
-editing allergen preferences from the app.
+Not implemented yet: the meal exchange (burza; orders already in it are only flagged)
+and multiple portions (the author's canteen does not offer them).
 
 ## How it works
 

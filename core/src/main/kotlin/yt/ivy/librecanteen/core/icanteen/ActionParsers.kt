@@ -156,19 +156,37 @@ internal object PasswordFormParser {
     }
 }
 
+/** The allergen form as submitted by the browser: field names plus the current values. */
+internal class AllergenForm(
+    val settings: AllergenSettings,
+    val fieldByCode: Map<String, String>,
+    val modeField: String,
+    val hidden: Map<String, String>,
+)
+
 internal object AllergenSettingsParser {
     private val LABEL = Regex("""^(\d{1,2}[a-z]?)\s+-\s+(.*?)(?:\s+-\s*)?$""")
 
-    fun parse(html: String): AllergenSettings {
+    fun parse(html: String): AllergenSettings = parseForm(html).settings
+
+    fun parseForm(html: String): AllergenForm {
         val form = Jsoup.parse(html).selectFirst("form#alergens")
             ?: throw CanteenException.UnsupportedLayout("allergen form not found")
+        val fields = LinkedHashMap<String, String>()
         val allergens = form.select("input[type=checkbox]").map { box ->
             val label = form.selectFirst("label[for=${box.id()}]")?.text()?.clean().orEmpty()
             val match = LABEL.find(label) ?: throw CanteenException.UnsupportedLayout("allergen label: $label")
+            fields[match.groupValues[1]] = box.attr("name")
             Allergen(match.groupValues[1], match.groupValues[2], box.hasAttr("checked"))
         }
         if (allergens.isEmpty()) throw CanteenException.UnsupportedLayout("allergen form has no allergens")
-        val mode = form.selectFirst("select option[selected]")?.attr("value")?.toIntOrNull() ?: 1
-        return AllergenSettings(allergens, mode)
+        val select = form.selectFirst("select[name]")
+            ?: throw CanteenException.UnsupportedLayout("allergen form has no display mode")
+        val mode = select.selectFirst("option[selected]")?.attr("value")?.toIntOrNull() ?: 1
+        val hidden = form.select("input[type=hidden][name]").associate { it.attr("name") to it.attr("value") }
+        if ("_csrf" !in hidden || "javax.faces.ViewState" !in hidden) {
+            throw CanteenException.UnsupportedLayout("allergen form is missing hidden fields")
+        }
+        return AllergenForm(AllergenSettings(allergens, mode), fields, select.attr("name"), hidden)
     }
 }
