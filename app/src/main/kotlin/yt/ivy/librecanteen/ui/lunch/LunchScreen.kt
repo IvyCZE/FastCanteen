@@ -377,11 +377,8 @@ private fun mealStatus(meal: Meal): String? {
     when (meal.state) {
         MealState.ORDERED -> parts += stringResource(R.string.state_ordered) + if (meal.quantity > 1) " · ${meal.quantity}×" else ""
         MealState.ORDERED_LOCKED -> parts += stringResource(R.string.state_ordered_locked) + if (meal.quantity > 1) " · ${meal.quantity}×" else ""
-        MealState.ORDERABLE, MealState.REORDERABLE ->
-            meal.timings.orderUntil?.let { parts += stringResource(R.string.order_until, formatDeadline(it)) }
-        MealState.LOCKED -> Unit
+        MealState.ORDERABLE, MealState.REORDERABLE, MealState.LOCKED -> Unit
     }
-    if (meal.state == MealState.ORDERED) meal.timings.cancelUntil?.let { parts += stringResource(R.string.cancel_until, formatDeadline(it)) }
     if (meal.inExchange) parts += stringResource(R.string.in_exchange)
     meal.lockedReason?.let { parts += it }
     return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
@@ -466,7 +463,8 @@ private fun ButtonContent(busy: Boolean, label: Int) {
 @Composable
 private fun MealInfoDialog(meal: Meal, allergenNames: Map<String, String>, onDismiss: () -> Unit) {
     val timings = meal.timings
-    val codes = meal.dishes.flatMap { it.allergens }.distinct().sortedWith(compareBy({ it.takeWhile(Char::isDigit).toIntOrNull() ?: 99 }, { it }))
+    val withAllergens = meal.dishes.filter { it.allergens.isNotEmpty() }
+    val partial = withAllergens.isNotEmpty() && withAllergens.size < meal.dishes.size
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(meal.label) },
@@ -482,12 +480,28 @@ private fun MealInfoDialog(meal: Meal, allergenNames: Map<String, String>, onDis
                 }
                 Spacer(Modifier.size(4.dp))
                 Text(stringResource(R.string.info_allergens), style = MaterialTheme.typography.titleSmall)
-                if (codes.isEmpty()) {
-                    Text(stringResource(R.string.info_no_allergens), style = MaterialTheme.typography.bodyMedium)
-                } else {
-                    codes.forEach { code ->
-                        Text("$code  ${allergenNames[code].orEmpty()}".trim(), style = MaterialTheme.typography.bodyMedium)
+                // The canteen often publishes codes for the soup only, so each dish is shown on its own.
+                meal.dishes.forEach { dish ->
+                    Text(dish.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                    if (dish.allergens.isEmpty()) {
+                        Text(
+                            stringResource(R.string.info_dish_no_allergens),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        dish.allergens.sortedWith(compareBy({ it.takeWhile(Char::isDigit).toIntOrNull() ?: 99 }, { it })).forEach { code ->
+                            Text("$code  ${allergenNames[code].orEmpty()}".trim(), style = MaterialTheme.typography.bodySmall)
+                        }
                     }
+                }
+                if (partial || withAllergens.isEmpty()) {
+                    Text(
+                        stringResource(if (partial) R.string.info_allergens_partial else R.string.info_no_allergens),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
                 }
             }
         },

@@ -35,8 +35,6 @@
     <string name="action_switch">Přeobjednat</string>
     <string name="state_ordered">Objednáno</string>
     <string name="state_ordered_locked">Objednáno, nelze zrušit</string>
-    <string name="order_until">Objednat do %1$s</string>
-    <string name="cancel_until">zrušit do %1$s</string>
     <string name="msg_ordered">Objednáno: %1$s</string>
     <string name="msg_cancelled">Zrušeno: %1$s</string>
     <string name="msg_switched">Přeobjednáno: %1$s</string>
@@ -99,7 +97,9 @@
     <string name="info_pickup">Výdej</string>
     <string name="info_orders">Objednáno</string>
     <string name="info_allergens">Alergeny</string>
-    <string name="info_no_allergens">U tohoto jídla nejsou uvedeny žádné alergeny.</string>
+    <string name="info_no_allergens">U tohoto jídla jídelna neuvádí žádné alergeny. To neznamená, že žádné neobsahuje.</string>
+    <string name="info_dish_no_allergens">Alergeny nejsou uvedeny</string>
+    <string name="info_allergens_partial">Jídelna uvádí alergeny jen u některých částí jídla. Chybějící údaj neznamená, že část alergen neobsahuje.</string>
     <string name="settings_appearance">Vzhled</string>
     <string name="settings_theme">Motiv</string>
     <string name="theme_system">Podle systému</string>

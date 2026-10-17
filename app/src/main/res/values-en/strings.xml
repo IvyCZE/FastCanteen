@@ -35,8 +35,6 @@
     <string name="action_switch">Switch</string>
     <string name="state_ordered">Ordered</string>
     <string name="state_ordered_locked">Ordered, cannot be cancelled</string>
-    <string name="order_until">Order by %1$s</string>
-    <string name="cancel_until">cancel by %1$s</string>
     <string name="msg_ordered">Ordered: %1$s</string>
     <string name="msg_cancelled">Cancelled: %1$s</string>
     <string name="msg_switched">Switched to: %1$s</string>
@@ -99,7 +97,9 @@
     <string name="info_pickup">Pickup</string>
     <string name="info_orders">Ordered</string>
     <string name="info_allergens">Allergens</string>
-    <string name="info_no_allergens">No allergens are listed for this meal.</string>
+    <string name="info_no_allergens">The canteen lists no allergens for this meal. That does not mean it has none.</string>
+    <string name="info_dish_no_allergens">No allergens listed</string>
+    <string name="info_allergens_partial">The canteen lists allergens for only some parts of the meal. A missing entry does not mean the part has no allergens.</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_theme">Theme</string>
     <string name="theme_system">Follow system</string>
