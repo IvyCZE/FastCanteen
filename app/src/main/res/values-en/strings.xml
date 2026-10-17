@@ -97,9 +97,6 @@
     <string name="info_pickup">Pickup</string>
     <string name="info_orders">Ordered</string>
     <string name="info_allergens">Allergens</string>
-    <string name="info_no_allergens">The canteen lists no allergens for this meal. That does not mean it has none.</string>
-    <string name="info_dish_no_allergens">No allergens listed</string>
-    <string name="info_allergens_partial">The canteen lists allergens for only some parts of the meal. A missing entry does not mean the part has no allergens.</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_theme">Theme</string>
     <string name="theme_system">Follow system</string>

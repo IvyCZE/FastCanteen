@@ -63,6 +63,7 @@ import yt.ivy.librecanteen.core.model.DayMenu
 import yt.ivy.librecanteen.core.model.Dish
 import yt.ivy.librecanteen.core.model.Meal
 import yt.ivy.librecanteen.core.model.MealState
+import yt.ivy.librecanteen.core.model.triggers
 import yt.ivy.librecanteen.data.CalendarMode
 import yt.ivy.librecanteen.ui.UiText
 import yt.ivy.librecanteen.ui.asString
@@ -348,7 +349,8 @@ private fun MealCard(
                 meal.price?.let { Text(formatMoney(it), style = MaterialTheme.typography.titleMedium.merge(NumericStyle)) }
             }
 
-            meal.dishes.forEach { DishLine(it, it.triggers(allergens)) }
+            val flagged = meal.triggers(allergens)
+            meal.dishes.forEach { DishLine(it, flagged) }
 
             val status = mealStatus(meal)
             if (status != null) {
@@ -463,8 +465,8 @@ private fun ButtonContent(busy: Boolean, label: Int) {
 @Composable
 private fun MealInfoDialog(meal: Meal, allergenNames: Map<String, String>, onDismiss: () -> Unit) {
     val timings = meal.timings
-    val withAllergens = meal.dishes.filter { it.allergens.isNotEmpty() }
-    val partial = withAllergens.isNotEmpty() && withAllergens.size < meal.dishes.size
+    val codes = meal.dishes.flatMap { it.allergens }.distinct()
+        .sortedWith(compareBy({ it.takeWhile(Char::isDigit).toIntOrNull() ?: 99 }, { it }))
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(meal.label) },
@@ -479,29 +481,11 @@ private fun MealInfoDialog(meal: Meal, allergenNames: Map<String, String>, onDis
                     InfoLine(stringResource(R.string.info_orders), "${timings.ordersCount} / ${timings.ordersLimit}")
                 }
                 Spacer(Modifier.size(4.dp))
-                Text(stringResource(R.string.info_allergens), style = MaterialTheme.typography.titleSmall)
-                // The canteen often publishes codes for the soup only, so each dish is shown on its own.
-                meal.dishes.forEach { dish ->
-                    Text(dish.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                    if (dish.allergens.isEmpty()) {
-                        Text(
-                            stringResource(R.string.info_dish_no_allergens),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    } else {
-                        dish.allergens.sortedWith(compareBy({ it.takeWhile(Char::isDigit).toIntOrNull() ?: 99 }, { it })).forEach { code ->
-                            Text("$code  ${allergenNames[code].orEmpty()}".trim(), style = MaterialTheme.typography.bodySmall)
-                        }
+                if (codes.isNotEmpty()) {
+                    Text(stringResource(R.string.info_allergens), style = MaterialTheme.typography.titleSmall)
+                    codes.forEach { code ->
+                        Text("$code  ${allergenNames[code].orEmpty()}".trim(), style = MaterialTheme.typography.bodyMedium)
                     }
-                }
-                if (partial || withAllergens.isEmpty()) {
-                    Text(
-                        stringResource(if (partial) R.string.info_allergens_partial else R.string.info_no_allergens),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
                 }
             }
         },

@@ -118,6 +118,12 @@ public data class Meal(
     val noteAction: NoteAction? = null,
 )
 
+/**
+ * Whether any dish of the meal declares an allergen the user selected. Canteens often list codes for the soup
+ * only, so the whole meal counts as affected, not just the dish that carries the codes.
+ */
+public fun Meal.triggers(selected: Set<String>): Boolean = dishes.any { it.triggers(selected) }
+
 /** A day's menu. [meals] is empty when the canteen has no menu for [date]. */
 @Serializable
 public data class DayMenu(val date: LocalDate, val meals: List<Meal>)

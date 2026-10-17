@@ -3,6 +3,7 @@ package yt.ivy.librecanteen.core.icanteen
 import yt.ivy.librecanteen.core.CanteenException
 import yt.ivy.librecanteen.core.model.MealState
 import yt.ivy.librecanteen.core.model.NoteAction
+import yt.ivy.librecanteen.core.model.triggers
 import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -100,6 +101,16 @@ class DishAllergenMatchingTest {
         assertFalse(dish.triggers(setOf("7b")))
         assertFalse(dish.triggers(setOf("9", "11")))
         assertFalse(dish.triggers(emptySet()))
+    }
+}
+
+class MealAllergenMatchingTest {
+    @Test
+    fun `codes on the soup affect the whole meal`() {
+        val menu = DayMenuParser.parse(LocalDate.of(2026, 10, 20), fixture("day_ordered.html"))
+        // The fixture lists "1, 3, 7" after the soup only.
+        assertTrue(menu.meals[0].triggers(setOf("7")))
+        assertFalse(menu.meals[0].triggers(setOf("9")))
     }
 }
 

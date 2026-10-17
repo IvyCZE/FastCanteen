@@ -97,9 +97,6 @@
     <string name="info_pickup">Výdej</string>
     <string name="info_orders">Objednáno</string>
     <string name="info_allergens">Alergeny</string>
-    <string name="info_no_allergens">U tohoto jídla jídelna neuvádí žádné alergeny. To neznamená, že žádné neobsahuje.</string>
-    <string name="info_dish_no_allergens">Alergeny nejsou uvedeny</string>
-    <string name="info_allergens_partial">Jídelna uvádí alergeny jen u některých částí jídla. Chybějící údaj neznamená, že část alergen neobsahuje.</string>
     <string name="settings_appearance">Vzhled</string>
     <string name="settings_theme">Motiv</string>
     <string name="theme_system">Podle systému</string>
