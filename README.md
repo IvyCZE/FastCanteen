@@ -75,6 +75,10 @@ When adding samples, remove names, usernames, addresses, balances, CSRF values a
 Your canteen address and password are entered in the app and stay on your device.
 No credentials, school names or personal data belong in this repository.
 
+## Project notes
+
+`JOURNAL.md` records the design decisions, how iCanteen behaves, the history and the plan. `AGENTS.md` is for AI coding agents.
+
 ## License
 
 MIT, see [LICENSE](LICENSE).
