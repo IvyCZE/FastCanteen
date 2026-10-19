@@ -250,12 +250,7 @@ private fun MonthCalendar(
         }
         val lineColor = MaterialTheme.colorScheme.outlineVariant
         val weeks = LunchNav.monthCells(state.month).chunked(7)
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .clip(MaterialTheme.shapes.medium)
-                .border(1.dp, lineColor, MaterialTheme.shapes.medium),
-        ) {
+        Column(Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth()) {
                 DayOfWeek.entries.forEachIndexed { column, dow ->
                     Box(Modifier.weight(1f).height(28.dp).gridLines(lineColor, right = column < 6, bottom = true), contentAlignment = Alignment.Center) {
@@ -293,7 +288,7 @@ private fun MonthCalendar(
 
 private val CIRCLE_SIZE = 40.dp
 
-/** Thin lines on the right and bottom edge of a calendar cell; together with the outer border they form the grid. */
+/** Thin lines on the right and bottom edge of a calendar cell; together they form the grid between the cells. */
 private fun Modifier.gridLines(color: Color, right: Boolean, bottom: Boolean): Modifier = drawBehind {
     val stroke = 1.dp.toPx()
     if (right) drawLine(color, Offset(size.width - stroke / 2, 0f), Offset(size.width - stroke / 2, size.height), stroke)
