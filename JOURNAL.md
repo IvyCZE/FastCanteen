@@ -161,9 +161,10 @@ switches the app language. "Privacy Policy" and the two language names are not
 translated, as in the mockup.
 The former short privacy note ("credentials stay on this device") was dropped with the redesign.
 
-App icon: adaptive icon, gray circle (`#3E3B39`) with blue (`#9DC8F2`) knife and spoon. The in-app logo
-(`ic_logo.xml`) has the same blue on a darker circle (`#1c1b1a`), so the two differ in darkness. The foreground is scaled so the circle fills the 72 dp safe zone of the 108 dp canvas, and the knife
-handle runs to the edge of the mask. The same foreground is the monochrome layer for Android 13+ themed icons.
+App icon: adaptive icon, dark gray circle (`#1c1b1a`) with blue (`#9DC8F2`) knife and spoon, the same colors
+as the in-app logo (`ic_logo.xml`). The foreground is scaled so the circle fills the 72 dp safe zone of the 108 dp
+canvas, and the knife handle runs to the edge of the mask. The same foreground is the monochrome layer for
+Android 13+ themed icons.
 
 ## 6. Timeline
 
@@ -188,6 +189,7 @@ handle runs to the edge of the mask. The same foreground is the monochrome layer
 | | `b7bf7e7`, `6cbcac4` | Meal name as title, checkbox ordering, icon-only exchange buttons |
 | | `ebe49e4` .. `8cba23d` | One container per day with left line, soup in its own card |
 | | `12a16cd`, `43e26cd` | Exchange card tidy-up, calendar grid lines, login redesign |
+| | `37dd577` | App language setting, new sign-in screen, calendar marks, issued meals |
 
 Live-tested against a real account during development (always restored afterwards): ordering and
 cancelling, notes, allergen settings, taking a meal from the exchange, putting one in and withdrawing it.
@@ -276,6 +278,13 @@ Also update sections 5, 6, 8 and 9 above when they stop being true, and the READ
 visible behavior changes.
 
 ## Log
+
+### 2026-10-19, launcher icon matches the logo
+- The launcher background is now `#1c1b1a`, the same gray as the in-app logo circle, as the user asked. It was
+  `#3E3B39` before, so the home screen icon and the in-app logo differed.
+- Verified: `:core:test`, `:app:testDebugUnitTest`, `:app:lintDebug` (13 warnings, only `UseKtx` and
+  `UseTomlInstead`, read from the lint report), `:app:assembleDebug`. Not seen on a device.
+- Follow-ups: see section 9 (icon centering and the themed icon on the phone).
 
 ### 2026-10-19, dark login page, dark fields and a text language switch
 - Dark themes get a dark gray login page (`#262422`) instead of the near-black theme background. The form
