@@ -174,7 +174,7 @@ fun LunchScreen(
                 ) {
                     if (mode == CalendarMode.WEEK) {
                         items(state.week, key = { it.toString() }) { day ->
-                            DaySection(day, state.days[day], state, showHeader = true, onAction, onNote, onExchangePut, onExchangeWithdraw)
+                            DaySection(day, state.days[day], state, showHeader = true, onAction, onNote, onExchangePut, onExchangeWithdraw, Modifier.padding(bottom = 12.dp))
                         }
                     } else {
                         item(key = "calendar") {
@@ -192,7 +192,7 @@ fun LunchScreen(
             val last = state.week.last()
             "${first.dayOfMonth}.${first.monthValue}. – ${last.dayOfMonth}.${last.monthValue}."
         } else {
-            formatDayHeader(state.anchor).replaceFirst(' ', ',').replace("\u00a0", " ")
+            formatDayHeader(state.anchor).replaceFirst(" ", ", ").replace("\u00a0", "")
         }
         DateBar(
             label = barLabel,
@@ -217,7 +217,7 @@ private fun MonthCalendar(
     val today = LocalDate.now()
     var picking by remember { mutableStateOf(false) }
     Column(
-        Modifier.fillMaxWidth().horizontalSwipe(onPrevious = onPreviousMonth, onNext = onNextMonth),
+        Modifier.fillMaxWidth().horizontalSwipe(onPrevious = onPreviousMonth, onNext = onNextMonth).padding(bottom = 12.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Row(
@@ -365,9 +365,10 @@ private fun DaySection(
     onNote: (LocalDate, Meal, String) -> Unit,
     onExchangePut: (LocalDate, Meal, Int) -> Unit,
     onExchangeWithdraw: (LocalDate, Meal) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val isToday = day == LocalDate.now()
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (showHeader) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 4.dp, top = 4.dp)) {
                 Text(formatDayHeader(day), style = MaterialTheme.typography.titleMedium.merge(NumericStyle))

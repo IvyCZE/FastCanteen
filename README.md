@@ -17,7 +17,7 @@ a calm, fast interface for the weekly menu, one-tap ordering, credit, payments a
 - Sign-in is remembered; the login is stored encrypted with a non-exportable Android Keystore key
 - Order notes
 - Meal exchange (burza): take meals other people offer, put your own order in (once it can no longer be cancelled) and take it back; every step is verified against the server
-- Allergen codes that match your selection are marked in red with a warning icon; the selection is edited in the app and stored in the canteen
+- Allergen codes that match your selection are marked in red with a warning icon; the selection is edited in the app and saved to the canteen automatically a moment after the last change
 - Offline cache: the last loaded menus stay readable without a connection (ordering is disabled)
 - Optional reminder from Thursday when nothing is ordered for next week
 - Optional app lock with biometrics or the device screen lock

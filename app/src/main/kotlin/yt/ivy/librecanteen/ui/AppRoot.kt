@@ -240,7 +240,7 @@ private fun SettingsRoute(
         },
         allergens = allergens,
         onOpenAllergens = settingsVm::loadAllergens,
-        onSaveAllergens = settingsVm::saveAllergens,
+        onSelectAllergens = settingsVm::selectAllergens,
         onCloseAllergens = settingsVm::closeAllergens,
         reminders = reminders,
         onReminders = { enable ->

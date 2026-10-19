@@ -69,6 +69,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import yt.ivy.librecanteen.R
 import yt.ivy.librecanteen.core.model.AllergenSettings
@@ -91,9 +92,13 @@ data class PasswordState(
 
 data class AllergenUiState(
     val loading: Boolean = false,
+    /** What the canteen has stored. */
     val settings: AllergenSettings? = null,
+    /** What the user has ticked; may be ahead of [settings] while a save is waiting or running. */
+    val selected: Set<String> = emptySet(),
     val saving: Boolean = false,
     val error: UiText? = null,
+    /** The last save went through and nothing was changed since. */
     val saved: Boolean = false,
 )
 
@@ -104,13 +109,18 @@ class SettingsViewModel(
     private val _allergens = MutableStateFlow(AllergenUiState())
     val allergens: StateFlow<AllergenUiState> = _allergens.asStateFlow()
 
+    // Ticking several boxes in a row costs the school's server one request, not one per box.
+    private val allergenSaver = DebouncedSaver<Set<String>>(viewModelScope, ALLERGEN_AUTOSAVE_MS) { persistAllergens(it) }
+
     fun loadAllergens() {
         _allergens.value = AllergenUiState(loading = true)
         viewModelScope.launch {
+            // A save left over from the last visit must land before the settings are read back.
+            allergenSaver.flush()
             try {
                 val settings = repository.allergenSettings()
                 appSettings.setAllergenCodes(settings.selectedCodes)
-                _allergens.value = AllergenUiState(settings = settings)
+                _allergens.value = AllergenUiState(settings = settings, selected = settings.selectedCodes)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -119,25 +129,33 @@ class SettingsViewModel(
         }
     }
 
-    fun saveAllergens(codes: Set<String>) {
-        val current = _allergens.value.settings ?: return
-        if (_allergens.value.saving) return
-        _allergens.value = _allergens.value.copy(saving = true, error = null)
-        viewModelScope.launch {
-            try {
-                val saved = repository.saveAllergenSettings(codes, current.displayMode)
-                appSettings.setAllergenCodes(saved.selectedCodes)
-                _allergens.value = AllergenUiState(settings = saved, saved = true)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _allergens.value = _allergens.value.copy(saving = false, error = e.toUiText())
-            }
-        }
+    fun selectAllergens(codes: Set<String>) {
+        if (_allergens.value.settings == null) return
+        _allergens.update { it.copy(selected = codes, saved = false, error = null) }
+        allergenSaver.submit(codes)
     }
 
+    /** Called when the page is left, so a change made in the last moments is not lost. */
     fun closeAllergens() {
-        _allergens.value = AllergenUiState()
+        viewModelScope.launch { allergenSaver.flush() }
+    }
+
+    private suspend fun persistAllergens(codes: Set<String>) {
+        val current = _allergens.value.settings ?: return
+        if (codes == current.selectedCodes) {
+            _allergens.update { it.copy(saved = false) }
+            return
+        }
+        _allergens.update { it.copy(saving = true) }
+        try {
+            val saved = repository.saveAllergenSettings(codes, current.displayMode)
+            appSettings.setAllergenCodes(saved.selectedCodes)
+            _allergens.update { it.copy(settings = saved, saving = false, saved = it.selected == saved.selectedCodes) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            _allergens.update { it.copy(saving = false, error = e.toUiText()) }
+        }
     }
 
     private val _password = MutableStateFlow(PasswordState())
@@ -164,6 +182,10 @@ class SettingsViewModel(
 
     fun signOut() {
         viewModelScope.launch { repository.signOut() }
+    }
+
+    private companion object {
+        const val ALLERGEN_AUTOSAVE_MS = 1500L
     }
 }
 
@@ -192,7 +214,7 @@ fun SettingsScreen(
     onReminders: (Boolean) -> Unit,
     allergens: AllergenUiState,
     onOpenAllergens: () -> Unit,
-    onSaveAllergens: (Set<String>) -> Unit,
+    onSelectAllergens: (Set<String>) -> Unit,
     onCloseAllergens: () -> Unit,
 ) {
     var pageName by rememberSaveable { mutableStateOf<String?>(null) }
@@ -230,7 +252,7 @@ fun SettingsScreen(
                     )
                 }
                 SettingsPage.Allergens -> PageColumn {
-                    AllergensPage(allergens, onOpen = onOpenAllergens, onSave = onSaveAllergens, onClose = onCloseAllergens)
+                    AllergensPage(allergens, onOpen = onOpenAllergens, onSelect = onSelectAllergens, onClose = onCloseAllergens)
                 }
                 SettingsPage.Notifications -> PageColumn {
                     SettingsCard {
@@ -392,15 +414,14 @@ private fun AccountPage(
     }
 }
 
-/** The allergen list is read from the canteen when the page opens and written back with the save button. */
+/** Read from the canteen when the page opens; every change is saved automatically a moment after the last tick. */
 @Composable
-private fun AllergensPage(state: AllergenUiState, onOpen: () -> Unit, onSave: (Set<String>) -> Unit, onClose: () -> Unit) {
+private fun AllergensPage(state: AllergenUiState, onOpen: () -> Unit, onSelect: (Set<String>) -> Unit, onClose: () -> Unit) {
     DisposableEffect(Unit) {
         onOpen()
         onDispose(onClose)
     }
     val settings = state.settings
-    var selected by remember(settings) { mutableStateOf(settings?.selectedCodes.orEmpty()) }
 
     if (settings == null) {
         if (state.error != null) {
@@ -423,13 +444,13 @@ private fun AllergensPage(state: AllergenUiState, onOpen: () -> Unit, onSave: (S
                 val isGroup = allergen.code.last().isDigit()
                 Row(
                     Modifier.fillMaxWidth()
-                        .toggleable(allergen.code in selected, enabled = !state.saving, role = Role.Checkbox) { on ->
-                            selected = if (on) selected + allergen.code else selected - allergen.code
+                        .toggleable(allergen.code in state.selected, role = Role.Checkbox) { on ->
+                            onSelect(if (on) state.selected + allergen.code else state.selected - allergen.code)
                         }
                         .padding(start = if (isGroup) 0.dp else 24.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Checkbox(checked = allergen.code in selected, onCheckedChange = null)
+                    Checkbox(checked = allergen.code in state.selected, onCheckedChange = null)
                     Text(
                         "${allergen.code}  ${allergen.name.substringBefore(" - ")}",
                         style = MaterialTheme.typography.bodyMedium,
@@ -439,15 +460,14 @@ private fun AllergensPage(state: AllergenUiState, onOpen: () -> Unit, onSave: (S
             }
         }
     }
-    if (state.error != null) {
-        Text(state.error.asString(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-    }
-    val changed = selected != settings.selectedCodes
-    if (state.saved && !changed) {
-        Text(stringResource(R.string.allergens_saved), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
-    }
-    Button(onClick = { onSave(selected) }, enabled = changed && !state.saving, modifier = Modifier.fillMaxWidth()) {
-        if (state.saving) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp) else Text(stringResource(R.string.note_save))
+    val unsaved = state.selected != settings.selectedCodes
+    when {
+        state.error != null -> Text(state.error.asString(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        state.saving || unsaved -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
+            Text(stringResource(R.string.allergens_saving), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        state.saved -> Text(stringResource(R.string.allergens_saved), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
     }
 }
 

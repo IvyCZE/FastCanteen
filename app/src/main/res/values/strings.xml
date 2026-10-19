@@ -77,7 +77,7 @@
     <string name="reminder_title">Nemáš objednáno na příští týden</string>
     <string name="reminder_text">Jídelníček už je k dispozici, otevři aplikaci a objednej si.</string>
     <string name="settings_allergens">Moje alergeny</string>
-    <string name="allergens_hint">Uloží se do jídelny. Jídla s vybranými alergeny se v jídelníčku zvýrazní.</string>
+    <string name="allergens_hint">Ukládá se do jídelny automaticky. Jídla s vybranými alergeny se v jídelníčku zvýrazní.</string>
     <string name="allergens_saved">Alergeny byly uloženy.</string>
     <string name="tab_info">Info</string>
     <string name="tab_burza">Burza</string>
@@ -137,4 +137,5 @@
     <string name="settings_version">Verze %1$s</string>
     <string name="settings_cat_account">Účet a zabezpečení</string>
     <string name="allergen_warning">Obsahuje tvůj alergen</string>
+    <string name="allergens_saving">Ukládám…</string>
 </resources>
