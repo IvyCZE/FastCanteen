@@ -2,6 +2,7 @@ package yt.ivy.librecanteen.ui.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,7 +16,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Warning
@@ -41,6 +41,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -168,10 +169,9 @@ class SettingsViewModel(
 
 private enum class SettingsPage(val title: Int, val summary: Int, val icon: ImageVector) {
     Customization(R.string.settings_cat_customize, R.string.settings_cat_customize_summary, PaletteIcon),
-    Account(R.string.settings_account, R.string.settings_cat_account_summary, Icons.Filled.Person),
+    Account(R.string.settings_cat_account, R.string.settings_cat_account_summary, Icons.Filled.Person),
     Allergens(R.string.settings_allergens, R.string.settings_cat_allergens_summary, Icons.Filled.Warning),
     Notifications(R.string.settings_cat_notifications, R.string.settings_cat_notifications_summary, Icons.Filled.Notifications),
-    Security(R.string.settings_cat_security, R.string.settings_cat_security_summary, Icons.Filled.Lock),
     About(R.string.settings_about, R.string.settings_version, Icons.Filled.Info),
 }
 
@@ -224,29 +224,27 @@ fun SettingsScreen(
                 null -> SettingsHome(version) { pageName = it.name }
                 SettingsPage.Customization -> PageColumn { CustomizationPage(settings) }
                 SettingsPage.Account -> PageColumn {
-                    AccountPage(account, password, onChangePassword, onPasswordDialogClosed, onSignOut)
+                    AccountPage(
+                        account, password, onChangePassword, onPasswordDialogClosed, onSignOut,
+                        biometricAvailable, biometricLock, onBiometricLock,
+                    )
                 }
                 SettingsPage.Allergens -> PageColumn {
                     AllergensPage(allergens, onOpen = onOpenAllergens, onSave = onSaveAllergens, onClose = onCloseAllergens)
                 }
                 SettingsPage.Notifications -> PageColumn {
-                    SwitchRow(stringResource(R.string.settings_reminders), stringResource(R.string.settings_reminders_hint), reminders, true, onReminders)
-                }
-                SettingsPage.Security -> PageColumn {
-                    SwitchRow(
-                        stringResource(R.string.settings_lock),
-                        stringResource(if (biometricAvailable) R.string.settings_lock_hint else R.string.settings_lock_unavailable),
-                        biometricLock,
-                        biometricAvailable || biometricLock,
-                        onBiometricLock,
-                    )
+                    SettingsCard {
+                        SwitchRow(stringResource(R.string.settings_reminders), stringResource(R.string.settings_reminders_hint), reminders, true, onReminders)
+                    }
                 }
                 SettingsPage.About -> PageColumn {
-                    Text(
-                        stringResource(R.string.settings_about_text, version),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    SettingsCard {
+                        Text(
+                            stringResource(R.string.settings_about_text, version),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }
@@ -255,21 +253,37 @@ fun SettingsScreen(
 
 @Composable
 private fun PageColumn(content: @Composable () -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) { content() }
+    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { content() }
+}
+
+/** The rounded backdrop every item in the app sits on. */
+@Composable
+private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
+    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+    }
 }
 
 @Composable
 private fun SettingsHome(version: String, onOpen: (SettingsPage) -> Unit) {
-    SettingsPage.entries.forEach { entry ->
-        ListItem(
-            headlineContent = { Text(stringResource(entry.title)) },
-            supportingContent = {
-                Text(if (entry == SettingsPage.About) stringResource(entry.summary, version) else stringResource(entry.summary))
-            },
-            leadingContent = { Icon(entry.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            modifier = Modifier.clickable { onOpen(entry) },
-        )
+    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        SettingsPage.entries.forEach { entry ->
+            Surface(
+                onClick = { onOpen(entry) },
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                ListItem(
+                    headlineContent = { Text(stringResource(entry.title)) },
+                    supportingContent = {
+                        Text(if (entry == SettingsPage.About) stringResource(entry.summary, version) else stringResource(entry.summary))
+                    },
+                    leadingContent = { Icon(entry.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                )
+            }
+        }
     }
 }
 
@@ -279,53 +293,58 @@ private fun CustomizationPage(settings: AppSettings) {
     val dynamicColor by settings.dynamicColor.collectAsStateWithLifecycle()
     val calendarMode by settings.calendarMode.collectAsStateWithLifecycle()
 
-    Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-    Column {
-        ThemeMode.entries.forEach { option ->
-            Row(
-                Modifier.fillMaxWidth().selectable(selected = themeMode == option, role = Role.RadioButton) { settings.setThemeMode(option) },
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                RadioButton(selected = themeMode == option, onClick = null)
-                Text(
-                    stringResource(
-                        when (option) {
-                            ThemeMode.SYSTEM -> R.string.theme_system
-                            ThemeMode.LIGHT -> R.string.theme_light
-                            ThemeMode.DARK -> R.string.theme_dark
-                            ThemeMode.AMOLED -> R.string.theme_amoled
-                        },
-                    ),
-                    modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp),
-                )
+    SettingsCard {
+        Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+        Column {
+            ThemeMode.entries.forEach { option ->
+                Row(
+                    Modifier.fillMaxWidth().selectable(selected = themeMode == option, role = Role.RadioButton) { settings.setThemeMode(option) },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(selected = themeMode == option, onClick = null)
+                    Text(
+                        stringResource(
+                            when (option) {
+                                ThemeMode.SYSTEM -> R.string.theme_system
+                                ThemeMode.LIGHT -> R.string.theme_light
+                                ThemeMode.DARK -> R.string.theme_dark
+                                ThemeMode.AMOLED -> R.string.theme_amoled
+                            },
+                        ),
+                        modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp),
+                    )
+                }
             }
         }
     }
-    SwitchRow(
-        stringResource(R.string.settings_dynamic_color),
-        stringResource(if (dynamicColorSupported) R.string.settings_dynamic_color_hint else R.string.settings_dynamic_color_unavailable),
-        dynamicColor && dynamicColorSupported,
-        dynamicColorSupported,
-        settings::setDynamicColor,
-    )
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-    Text(stringResource(R.string.settings_calendar_mode), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-        CalendarMode.entries.forEachIndexed { index, option ->
-            SegmentedButton(
-                selected = calendarMode == option,
-                onClick = { settings.setCalendarMode(option) },
-                shape = SegmentedButtonDefaults.itemShape(index, CalendarMode.entries.size),
-            ) {
-                Text(stringResource(if (option == CalendarMode.WEEK) R.string.calendar_week else R.string.calendar_month))
+    SettingsCard {
+        SwitchRow(
+            stringResource(R.string.settings_dynamic_color),
+            stringResource(if (dynamicColorSupported) R.string.settings_dynamic_color_hint else R.string.settings_dynamic_color_unavailable),
+            dynamicColor && dynamicColorSupported,
+            dynamicColorSupported,
+            settings::setDynamicColor,
+        )
+    }
+    SettingsCard {
+        Text(stringResource(R.string.settings_calendar_mode), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            CalendarMode.entries.forEachIndexed { index, option ->
+                SegmentedButton(
+                    selected = calendarMode == option,
+                    onClick = { settings.setCalendarMode(option) },
+                    shape = SegmentedButtonDefaults.itemShape(index, CalendarMode.entries.size),
+                ) {
+                    Text(stringResource(if (option == CalendarMode.WEEK) R.string.calendar_week else R.string.calendar_month))
+                }
             }
         }
+        Text(
+            stringResource(R.string.settings_calendar_mode_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
-    Text(
-        stringResource(R.string.settings_calendar_mode_hint),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
 }
 
 @Composable
@@ -335,17 +354,31 @@ private fun AccountPage(
     onChangePassword: (current: String, new: String) -> Unit,
     onPasswordDialogClosed: () -> Unit,
     onSignOut: () -> Unit,
+    biometricAvailable: Boolean,
+    biometricLock: Boolean,
+    onBiometricLock: (Boolean) -> Unit,
 ) {
     var showDialog by remember { mutableStateOf(false) }
-    account?.let {
-        InfoRow(stringResource(R.string.settings_username), it.username)
-        InfoRow(stringResource(R.string.settings_canteen), it.address)
+    SettingsCard {
+        account?.let {
+            InfoRow(stringResource(R.string.settings_username), it.username)
+            InfoRow(stringResource(R.string.settings_canteen), it.address)
+        }
+        OutlinedButton(onClick = { showDialog = true }, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.settings_change_password))
+        }
+        OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.settings_sign_out))
+        }
     }
-    OutlinedButton(onClick = { showDialog = true }, modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.settings_change_password))
-    }
-    OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.settings_sign_out))
+    SettingsCard {
+        SwitchRow(
+            stringResource(R.string.settings_lock),
+            stringResource(if (biometricAvailable) R.string.settings_lock_hint else R.string.settings_lock_unavailable),
+            biometricLock,
+            biometricAvailable || biometricLock,
+            onBiometricLock,
+        )
     }
     if (showDialog) {
         ChangePasswordDialog(
@@ -379,28 +412,30 @@ private fun AllergensPage(state: AllergenUiState, onOpen: () -> Unit, onSave: (S
         return
     }
 
-    Text(
-        stringResource(R.string.allergens_hint),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    Column {
-        settings.allergens.forEach { allergen ->
-            val isGroup = allergen.code.last().isDigit()
-            Row(
-                Modifier.fillMaxWidth()
-                    .toggleable(allergen.code in selected, enabled = !state.saving, role = Role.Checkbox) { on ->
-                        selected = if (on) selected + allergen.code else selected - allergen.code
-                    }
-                    .padding(start = if (isGroup) 0.dp else 24.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Checkbox(checked = allergen.code in selected, onCheckedChange = null)
-                Text(
-                    "${allergen.code}  ${allergen.name.substringBefore(" - ")}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(start = 8.dp, top = 6.dp, bottom = 6.dp),
-                )
+    SettingsCard {
+        Text(
+            stringResource(R.string.allergens_hint),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Column {
+            settings.allergens.forEach { allergen ->
+                val isGroup = allergen.code.last().isDigit()
+                Row(
+                    Modifier.fillMaxWidth()
+                        .toggleable(allergen.code in selected, enabled = !state.saving, role = Role.Checkbox) { on ->
+                            selected = if (on) selected + allergen.code else selected - allergen.code
+                        }
+                        .padding(start = if (isGroup) 0.dp else 24.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(checked = allergen.code in selected, onCheckedChange = null)
+                    Text(
+                        "${allergen.code}  ${allergen.name.substringBefore(" - ")}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(start = 8.dp, top = 6.dp, bottom = 6.dp),
+                    )
+                }
             }
         }
     }

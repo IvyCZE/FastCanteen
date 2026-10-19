@@ -46,7 +46,6 @@
     <string name="history_not_issued">nevydáno</string>
     <string name="history_quantity">%1$d ks</string>
 
-    <string name="settings_account">Účet</string>
     <string name="settings_username">Uživatel</string>
     <string name="settings_canteen">Jídelna</string>
     <string name="settings_change_password">Změnit heslo</string>
@@ -131,11 +130,11 @@
     <string name="month_next">Další měsíc</string>
     <string name="settings_cat_customize">Přizpůsobení</string>
     <string name="settings_cat_customize_summary">Motiv, barvy a zobrazení jídelníčku</string>
-    <string name="settings_cat_account_summary">Přihlášení, heslo a odhlášení</string>
+    <string name="settings_cat_account_summary">Přihlášení, heslo a zámek aplikace</string>
     <string name="settings_cat_allergens_summary">Alergeny, které se mají zvýraznit</string>
     <string name="settings_cat_notifications">Upozornění</string>
     <string name="settings_cat_notifications_summary">Připomínky objednání</string>
-    <string name="settings_cat_security">Zabezpečení</string>
-    <string name="settings_cat_security_summary">Zámek aplikace</string>
     <string name="settings_version">Verze %1$s</string>
+    <string name="settings_cat_account">Účet a zabezpečení</string>
+    <string name="shared_dishes">Ke všem obědům</string>
 </resources>

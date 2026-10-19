@@ -171,7 +171,7 @@ fun LunchScreen(
                             MonthCalendar(state, onPreviousMonth, onNextMonth, onSelect, onPickMonth)
                         }
                         item(key = "day-${state.anchor}") {
-                            DaySection(state.anchor, state.days[state.anchor], state, showHeader = false, onAction, onNote, onExchangePut, onExchangeWithdraw)
+                            DaySection(state.anchor, state.days[state.anchor], state, showHeader = true, onAction, onNote, onExchangePut, onExchangeWithdraw)
                         }
                     }
                 }
@@ -377,21 +377,40 @@ private fun DaySection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 4.dp),
             )
-            else -> menu.meals.forEach { meal ->
-                MealCard(
-                    day = day,
-                    meal = meal,
-                    busy = state.busy.contains(MealKey(day, meal.course, meal.label)),
-                    offline = state.offline,
-                    allergens = state.allergens,
-                    allergenNames = state.allergenNames,
-                    onAction = onAction,
-                    onNote = onNote,
-                    onExchangePut = onExchangePut,
-                    onExchangeWithdraw = onExchangeWithdraw,
-                )
+            else -> {
+                val shared = CommonDishes.leadingCount(menu.meals)
+                if (shared > 0) SharedDishes(menu.meals[0].dishes.take(shared), state.allergens)
+                menu.meals.forEach { meal ->
+                    MealCard(
+                        day = day,
+                        meal = meal,
+                        busy = state.busy.contains(MealKey(day, meal.course, meal.label)),
+                        offline = state.offline,
+                        allergens = state.allergens,
+                        allergenNames = state.allergenNames,
+                        onAction = onAction,
+                        onNote = onNote,
+                        onExchangePut = onExchangePut,
+                        onExchangeWithdraw = onExchangeWithdraw,
+                        hiddenDishes = shared,
+                    )
+                }
             }
         }
+    }
+}
+
+/** What all of a day's meals start with, written once above the cards. */
+@Composable
+private fun SharedDishes(dishes: List<Dish>, allergens: Set<String>) {
+    val flagged = dishes.any { it.triggers(allergens) }
+    Column(Modifier.padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            stringResource(R.string.shared_dishes),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        dishes.forEach { DishLine(it, flagged) }
     }
 }
 
@@ -407,6 +426,7 @@ private fun MealCard(
     onNote: (LocalDate, Meal, String) -> Unit,
     onExchangePut: (LocalDate, Meal, Int) -> Unit,
     onExchangeWithdraw: (LocalDate, Meal) -> Unit,
+    hiddenDishes: Int,
 ) {
     var showInfo by remember { mutableStateOf(false) }
     var showPut by remember { mutableStateOf(false) }
@@ -450,7 +470,7 @@ private fun MealCard(
             }
 
             val flagged = meal.triggers(allergens)
-            meal.dishes.forEach { DishLine(it, flagged) }
+            meal.dishes.drop(hiddenDishes).forEach { DishLine(it, flagged) }
 
             meal.lockedReason?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
 
