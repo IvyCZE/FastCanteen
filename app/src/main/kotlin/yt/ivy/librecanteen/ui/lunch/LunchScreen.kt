@@ -157,7 +157,8 @@ fun LunchScreen(
             } else {
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier.fillMaxSize(),
+                    // Dragging sideways moves a day (month view) or a week; the calendar has its own swipe for months.
+                    modifier = Modifier.fillMaxSize().horizontalSwipe(onPrevious, onNext),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {

@@ -67,7 +67,6 @@
     <string name="note_save">Uložit</string>
     <string name="msg_note_saved">Poznámka uložena</string>
 
-    <string name="settings_app">Aplikace</string>
     <string name="settings_reminders">Připomínat objednání</string>
     <string name="settings_reminders_hint">Od čtvrtka upozorní, když nemáš objednáno na příští týden.</string>
     <string name="settings_lock">Zámek aplikace</string>
@@ -97,7 +96,6 @@
     <string name="info_pickup">Výdej</string>
     <string name="info_orders">Objednáno</string>
     <string name="info_allergens">Alergeny</string>
-    <string name="settings_appearance">Vzhled</string>
     <string name="settings_theme">Motiv</string>
     <string name="theme_system">Podle systému</string>
     <string name="theme_light">Světlý</string>
@@ -131,4 +129,13 @@
     <string name="exchange_section_others">Nabídky ostatních</string>
     <string name="month_previous">Předchozí měsíc</string>
     <string name="month_next">Další měsíc</string>
+    <string name="settings_cat_customize">Přizpůsobení</string>
+    <string name="settings_cat_customize_summary">Motiv, barvy a zobrazení jídelníčku</string>
+    <string name="settings_cat_account_summary">Přihlášení, heslo a odhlášení</string>
+    <string name="settings_cat_allergens_summary">Alergeny, které se mají zvýraznit</string>
+    <string name="settings_cat_notifications">Upozornění</string>
+    <string name="settings_cat_notifications_summary">Připomínky objednání</string>
+    <string name="settings_cat_security">Zabezpečení</string>
+    <string name="settings_cat_security_summary">Zámek aplikace</string>
+    <string name="settings_version">Verze %1$s</string>
 </resources>

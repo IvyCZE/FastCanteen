@@ -14,7 +14,17 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Warning
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,12 +46,16 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -61,6 +75,7 @@ import yt.ivy.librecanteen.data.Account
 import yt.ivy.librecanteen.data.AppSettings
 import yt.ivy.librecanteen.data.CalendarMode
 import yt.ivy.librecanteen.data.ThemeMode
+import yt.ivy.librecanteen.ui.theme.PaletteIcon
 import yt.ivy.librecanteen.ui.theme.dynamicColorSupported
 import yt.ivy.librecanteen.data.CanteenRepository
 import yt.ivy.librecanteen.ui.UiText
@@ -151,6 +166,15 @@ class SettingsViewModel(
     }
 }
 
+private enum class SettingsPage(val title: Int, val summary: Int, val icon: ImageVector) {
+    Customization(R.string.settings_cat_customize, R.string.settings_cat_customize_summary, PaletteIcon),
+    Account(R.string.settings_account, R.string.settings_cat_account_summary, Icons.Filled.Person),
+    Allergens(R.string.settings_allergens, R.string.settings_cat_allergens_summary, Icons.Filled.Warning),
+    Notifications(R.string.settings_cat_notifications, R.string.settings_cat_notifications_summary, Icons.Filled.Notifications),
+    Security(R.string.settings_cat_security, R.string.settings_cat_security_summary, Icons.Filled.Lock),
+    About(R.string.settings_about, R.string.settings_version, Icons.Filled.Info),
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -171,24 +195,23 @@ fun SettingsScreen(
     onSaveAllergens: (Set<String>) -> Unit,
     onCloseAllergens: () -> Unit,
 ) {
-    var showDialog by remember { mutableStateOf(false) }
-    var showAllergens by remember { mutableStateOf(false) }
+    var pageName by rememberSaveable { mutableStateOf<String?>(null) }
+    val page = pageName?.let(SettingsPage::valueOf)
     val context = LocalContext.current
     val version = remember {
         runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty()
     }
 
-    val themeMode by settings.themeMode.collectAsStateWithLifecycle()
-    val dynamicColor by settings.dynamicColor.collectAsStateWithLifecycle()
-    val calendarMode by settings.calendarMode.collectAsStateWithLifecycle()
+    // Registered after the one in AppRoot, so it wins while a page is open and leaves the settings list on the next back.
+    BackHandler(enabled = page != null) { pageName = null }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.tab_settings)) },
+                title = { Text(stringResource(page?.title ?: R.string.tab_settings)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { if (page != null) pageName = null else onBack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
@@ -196,103 +219,134 @@ fun SettingsScreen(
             )
         },
     ) { padding ->
-    Column(
-        Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Section(stringResource(R.string.settings_appearance)) {
-            Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.bodyMedium)
-            ThemeMode.entries.forEach { option ->
-                Row(
-                    Modifier.fillMaxWidth().selectable(selected = themeMode == option, role = Role.RadioButton) { settings.setThemeMode(option) },
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    RadioButton(selected = themeMode == option, onClick = null)
+        Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState())) {
+            when (page) {
+                null -> SettingsHome(version) { pageName = it.name }
+                SettingsPage.Customization -> PageColumn { CustomizationPage(settings) }
+                SettingsPage.Account -> PageColumn {
+                    AccountPage(account, password, onChangePassword, onPasswordDialogClosed, onSignOut)
+                }
+                SettingsPage.Allergens -> PageColumn {
+                    AllergensPage(allergens, onOpen = onOpenAllergens, onSave = onSaveAllergens, onClose = onCloseAllergens)
+                }
+                SettingsPage.Notifications -> PageColumn {
+                    SwitchRow(stringResource(R.string.settings_reminders), stringResource(R.string.settings_reminders_hint), reminders, true, onReminders)
+                }
+                SettingsPage.Security -> PageColumn {
+                    SwitchRow(
+                        stringResource(R.string.settings_lock),
+                        stringResource(if (biometricAvailable) R.string.settings_lock_hint else R.string.settings_lock_unavailable),
+                        biometricLock,
+                        biometricAvailable || biometricLock,
+                        onBiometricLock,
+                    )
+                }
+                SettingsPage.About -> PageColumn {
                     Text(
-                        stringResource(
-                            when (option) {
-                                ThemeMode.SYSTEM -> R.string.theme_system
-                                ThemeMode.LIGHT -> R.string.theme_light
-                                ThemeMode.DARK -> R.string.theme_dark
-                                ThemeMode.AMOLED -> R.string.theme_amoled
-                            },
-                        ),
-                        modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp),
+                        stringResource(R.string.settings_about_text, version),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
-            SwitchRow(
-                stringResource(R.string.settings_dynamic_color),
-                stringResource(if (dynamicColorSupported) R.string.settings_dynamic_color_hint else R.string.settings_dynamic_color_unavailable),
-                dynamicColor && dynamicColorSupported,
-                dynamicColorSupported,
-                settings::setDynamicColor,
-            )
-            Text(stringResource(R.string.settings_calendar_mode), style = MaterialTheme.typography.bodyMedium)
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                CalendarMode.entries.forEachIndexed { index, option ->
-                    SegmentedButton(
-                        selected = calendarMode == option,
-                        onClick = { settings.setCalendarMode(option) },
-                        shape = SegmentedButtonDefaults.itemShape(index, CalendarMode.entries.size),
-                    ) {
-                        Text(stringResource(if (option == CalendarMode.WEEK) R.string.calendar_week else R.string.calendar_month))
-                    }
-                }
-            }
-            Text(
-                stringResource(R.string.settings_calendar_mode_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        Section(stringResource(R.string.settings_account)) {
-            account?.let {
-                InfoRow(stringResource(R.string.settings_username), it.username)
-                InfoRow(stringResource(R.string.settings_canteen), it.address)
-            }
-            OutlinedButton(onClick = { showDialog = true }, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.settings_change_password))
-            }
-            OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.settings_sign_out))
-            }
-        }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        Section(stringResource(R.string.settings_app)) {
-            OutlinedButton(
-                onClick = { showAllergens = true; onOpenAllergens() },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text(stringResource(R.string.settings_allergens)) }
-            SwitchRow(stringResource(R.string.settings_reminders), stringResource(R.string.settings_reminders_hint), reminders, true, onReminders)
-            SwitchRow(
-                stringResource(R.string.settings_lock),
-                stringResource(if (biometricAvailable) R.string.settings_lock_hint else R.string.settings_lock_unavailable),
-                biometricLock,
-                biometricAvailable || biometricLock,
-                onBiometricLock,
-            )
-        }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        Section(stringResource(R.string.settings_about)) {
-            Text(
-                stringResource(R.string.settings_about_text, version),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
     }
-    }
+}
 
-    if (showAllergens) {
-        AllergenDialog(
-            state = allergens,
-            onSave = onSaveAllergens,
-            onDismiss = { showAllergens = false; onCloseAllergens() },
+@Composable
+private fun PageColumn(content: @Composable () -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) { content() }
+}
+
+@Composable
+private fun SettingsHome(version: String, onOpen: (SettingsPage) -> Unit) {
+    SettingsPage.entries.forEach { entry ->
+        ListItem(
+            headlineContent = { Text(stringResource(entry.title)) },
+            supportingContent = {
+                Text(if (entry == SettingsPage.About) stringResource(entry.summary, version) else stringResource(entry.summary))
+            },
+            leadingContent = { Icon(entry.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            modifier = Modifier.clickable { onOpen(entry) },
         )
     }
+}
 
+@Composable
+private fun CustomizationPage(settings: AppSettings) {
+    val themeMode by settings.themeMode.collectAsStateWithLifecycle()
+    val dynamicColor by settings.dynamicColor.collectAsStateWithLifecycle()
+    val calendarMode by settings.calendarMode.collectAsStateWithLifecycle()
+
+    Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+    Column {
+        ThemeMode.entries.forEach { option ->
+            Row(
+                Modifier.fillMaxWidth().selectable(selected = themeMode == option, role = Role.RadioButton) { settings.setThemeMode(option) },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(selected = themeMode == option, onClick = null)
+                Text(
+                    stringResource(
+                        when (option) {
+                            ThemeMode.SYSTEM -> R.string.theme_system
+                            ThemeMode.LIGHT -> R.string.theme_light
+                            ThemeMode.DARK -> R.string.theme_dark
+                            ThemeMode.AMOLED -> R.string.theme_amoled
+                        },
+                    ),
+                    modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp),
+                )
+            }
+        }
+    }
+    SwitchRow(
+        stringResource(R.string.settings_dynamic_color),
+        stringResource(if (dynamicColorSupported) R.string.settings_dynamic_color_hint else R.string.settings_dynamic_color_unavailable),
+        dynamicColor && dynamicColorSupported,
+        dynamicColorSupported,
+        settings::setDynamicColor,
+    )
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+    Text(stringResource(R.string.settings_calendar_mode), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+        CalendarMode.entries.forEachIndexed { index, option ->
+            SegmentedButton(
+                selected = calendarMode == option,
+                onClick = { settings.setCalendarMode(option) },
+                shape = SegmentedButtonDefaults.itemShape(index, CalendarMode.entries.size),
+            ) {
+                Text(stringResource(if (option == CalendarMode.WEEK) R.string.calendar_week else R.string.calendar_month))
+            }
+        }
+    }
+    Text(
+        stringResource(R.string.settings_calendar_mode_hint),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
+private fun AccountPage(
+    account: Account?,
+    password: PasswordState,
+    onChangePassword: (current: String, new: String) -> Unit,
+    onPasswordDialogClosed: () -> Unit,
+    onSignOut: () -> Unit,
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    account?.let {
+        InfoRow(stringResource(R.string.settings_username), it.username)
+        InfoRow(stringResource(R.string.settings_canteen), it.address)
+    }
+    OutlinedButton(onClick = { showDialog = true }, modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.settings_change_password))
+    }
+    OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.settings_sign_out))
+    }
     if (showDialog) {
         ChangePasswordDialog(
             state = password,
@@ -305,79 +359,60 @@ fun SettingsScreen(
     }
 }
 
+/** The allergen list is read from the canteen when the page opens and written back with the save button. */
 @Composable
-private fun AllergenDialog(state: AllergenUiState, onSave: (Set<String>) -> Unit, onDismiss: () -> Unit) {
+private fun AllergensPage(state: AllergenUiState, onOpen: () -> Unit, onSave: (Set<String>) -> Unit, onClose: () -> Unit) {
+    DisposableEffect(Unit) {
+        onOpen()
+        onDispose(onClose)
+    }
     val settings = state.settings
     var selected by remember(settings) { mutableStateOf(settings?.selectedCodes.orEmpty()) }
 
-    if (state.saved) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            text = { Text(stringResource(R.string.allergens_saved)) },
-            confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.dialog_close)) } },
-        )
+    if (settings == null) {
+        if (state.error != null) {
+            Text(state.error.asString(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+            TextButton(onClick = onOpen) { Text(stringResource(R.string.retry)) }
+        } else {
+            CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+        }
         return
     }
 
-    AlertDialog(
-        onDismissRequest = { if (!state.saving) onDismiss() },
-        title = { Text(stringResource(R.string.settings_allergens)) },
-        text = {
-            when {
-                settings == null -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (state.error != null) {
-                        Text(state.error.asString(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                    } else {
-                        CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
-                    }
-                }
-                else -> Column(Modifier.verticalScroll(rememberScrollState())) {
-                    Text(
-                        stringResource(R.string.allergens_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    settings.allergens.forEach { allergen ->
-                        val isGroup = allergen.code.last().isDigit()
-                        Row(
-                            Modifier.fillMaxWidth()
-                                .toggleable(allergen.code in selected, enabled = !state.saving, role = Role.Checkbox) { on ->
-                                    selected = if (on) selected + allergen.code else selected - allergen.code
-                                }
-                                .padding(start = if (isGroup) 0.dp else 24.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Checkbox(checked = allergen.code in selected, onCheckedChange = null)
-                            Text(
-                                "${allergen.code}  ${allergen.name.substringBefore(" - ")}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.padding(start = 8.dp, top = 6.dp, bottom = 6.dp),
-                            )
-                        }
-                    }
-                    if (state.error != null) {
-                        Text(state.error.asString(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onSave(selected) }, enabled = settings != null && !state.saving && selected != settings.selectedCodes) {
-                if (state.saving) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                else Text(stringResource(R.string.note_save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !state.saving) { Text(stringResource(R.string.dialog_close)) }
-        },
+    Text(
+        stringResource(R.string.allergens_hint),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-}
-
-@Composable
-private fun Section(title: String, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-        content()
+    Column {
+        settings.allergens.forEach { allergen ->
+            val isGroup = allergen.code.last().isDigit()
+            Row(
+                Modifier.fillMaxWidth()
+                    .toggleable(allergen.code in selected, enabled = !state.saving, role = Role.Checkbox) { on ->
+                        selected = if (on) selected + allergen.code else selected - allergen.code
+                    }
+                    .padding(start = if (isGroup) 0.dp else 24.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = allergen.code in selected, onCheckedChange = null)
+                Text(
+                    "${allergen.code}  ${allergen.name.substringBefore(" - ")}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(start = 8.dp, top = 6.dp, bottom = 6.dp),
+                )
+            }
+        }
+    }
+    if (state.error != null) {
+        Text(state.error.asString(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+    }
+    val changed = selected != settings.selectedCodes
+    if (state.saved && !changed) {
+        Text(stringResource(R.string.allergens_saved), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
+    }
+    Button(onClick = { onSave(selected) }, enabled = changed && !state.saving, modifier = Modifier.fillMaxWidth()) {
+        if (state.saving) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp) else Text(stringResource(R.string.note_save))
     }
 }
 

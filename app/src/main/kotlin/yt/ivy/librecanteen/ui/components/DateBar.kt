@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import yt.ivy.librecanteen.ui.theme.NumericStyle
 
 /**
- * Bottom strip with previous/next arrows around a label; dragging it sideways does the same as the arrows. A long press on the label calls [onLongClick],
+ * Bottom strip with previous/next arrows around a label A long press on the label calls [onLongClick],
  * which the lunch screen uses to switch between week and month view.
  */
 @OptIn(ExperimentalFoundationApi::class)
@@ -45,7 +45,7 @@ fun DateBar(
 ) {
     val haptics = LocalHapticFeedback.current
     Row(
-        modifier.fillMaxWidth().horizontalSwipe(onPrevious, onNext).padding(horizontal = 12.dp, vertical = 8.dp),
+        modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
