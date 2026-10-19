@@ -28,7 +28,7 @@
     <string name="week_previous">Previous week</string>
     <string name="week_next">Next week</string>
     <string name="today">Today</string>
-    <string name="no_menu">There is no menu for this day.</string>
+    <string name="no_menu">No lunches were listed for this day.</string>
 
     <string name="action_order">Order</string>
     <string name="action_cancel_order">Cancel</string>
@@ -86,8 +86,9 @@
     <string name="back">Back</string>
     <string name="day_previous">Previous day</string>
     <string name="day_next">Next day</string>
-    <string name="month_previous">Previous month</string>
-    <string name="month_next">Next month</string>
+    <string name="year_previous">Previous year</string>
+    <string name="year_next">Next year</string>
+    <string name="month_pick">Choose month</string>
     <string name="toggle_calendar_mode">Switch between week and month view</string>
     <string name="meal_details">Meal details</string>
     <string name="note_hint">Add note…</string>
@@ -128,4 +129,6 @@
     <string name="exchange_pieces">%1$d pcs</string>
     <string name="exchange_section_mine">Offered by you</string>
     <string name="exchange_section_others">Offered by others</string>
+    <string name="month_previous">Previous month</string>
+    <string name="month_next">Next month</string>
 </resources>

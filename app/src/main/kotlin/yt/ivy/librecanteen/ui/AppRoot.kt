@@ -159,6 +159,8 @@ private fun MainScaffold(repository: CanteenRepository, settings: AppSettings, l
                         onPreviousMonth = lunchVm::previousMonth,
                         onNextMonth = lunchVm::nextMonth,
                         onSelect = lunchVm::select,
+                        onPickMonth = lunchVm::pickMonth,
+                        onInitialScroll = lunchVm::consumeInitialScroll,
                         onToggleMode = lunchVm::toggleMode,
                         onAction = lunchVm::apply,
                         onNote = lunchVm::saveNote,

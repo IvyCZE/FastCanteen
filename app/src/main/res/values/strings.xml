@@ -28,7 +28,7 @@
     <string name="week_previous">Předchozí týden</string>
     <string name="week_next">Další týden</string>
     <string name="today">Dnes</string>
-    <string name="no_menu">Na tento den není jídelníček.</string>
+    <string name="no_menu">Na tento den nebyly vypsané obědy.</string>
 
     <string name="action_order">Objednat</string>
     <string name="action_cancel_order">Zrušit</string>
@@ -86,8 +86,9 @@
     <string name="back">Zpět</string>
     <string name="day_previous">Předchozí den</string>
     <string name="day_next">Další den</string>
-    <string name="month_previous">Předchozí měsíc</string>
-    <string name="month_next">Další měsíc</string>
+    <string name="year_previous">Předchozí rok</string>
+    <string name="year_next">Další rok</string>
+    <string name="month_pick">Vybrat měsíc</string>
     <string name="toggle_calendar_mode">Přepnout týdenní a měsíční zobrazení</string>
     <string name="meal_details">Podrobnosti o jídle</string>
     <string name="note_hint">Přidat poznámku…</string>
@@ -128,4 +129,6 @@
     <string name="exchange_pieces">%1$d ks</string>
     <string name="exchange_section_mine">Nabídnuto tebou</string>
     <string name="exchange_section_others">Nabídky ostatních</string>
+    <string name="month_previous">Předchozí měsíc</string>
+    <string name="month_next">Další měsíc</string>
 </resources>

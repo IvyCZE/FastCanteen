@@ -47,7 +47,7 @@ data class LunchState(
     /** Some days come from the cache, so nothing can be changed. */
     val offline: Boolean = false,
 ) {
-    val weekdays: List<LocalDate> get() = LunchNav.weekdays(anchor)
+    val week: List<LocalDate> get() = LunchNav.week(anchor)
     val month: YearMonth get() = YearMonth.from(anchor)
 }
 
@@ -61,7 +61,7 @@ class LunchViewModel(
 ) : ViewModel() {
     private val _state = MutableStateFlow(
         LunchState(
-            anchor = LunchNav.initialAnchor(today),
+            anchor = today,
             allergens = settings.allergenCodes.value,
             allergenNames = settings.allergenNames,
         ),
@@ -164,6 +164,13 @@ class LunchViewModel(
     fun nextMonth() = goTo(LunchNav.shiftMonth(_state.value.anchor, 1))
 
     fun select(day: LocalDate) = goTo(day)
+
+    fun pickMonth(month: YearMonth) = goTo(LunchNav.moveToMonth(_state.value.anchor, month, LocalDate.now()))
+
+    private var initialScrollPending = true
+
+    /** True once per app start, so the week list jumps to today only the first time it is shown. */
+    fun consumeInitialScroll(): Boolean = initialScrollPending.also { initialScrollPending = false }
 
     fun toggleMode() {
         settings.setCalendarMode(if (mode == CalendarMode.WEEK) CalendarMode.MONTH else CalendarMode.WEEK)

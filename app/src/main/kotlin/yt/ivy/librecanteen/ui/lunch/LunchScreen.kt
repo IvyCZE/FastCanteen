@@ -17,12 +17,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
@@ -70,6 +72,7 @@ import yt.ivy.librecanteen.data.CalendarMode
 import yt.ivy.librecanteen.ui.UiText
 import yt.ivy.librecanteen.ui.asString
 import yt.ivy.librecanteen.ui.components.DateBar
+import yt.ivy.librecanteen.ui.components.horizontalSwipe
 import yt.ivy.librecanteen.ui.formatDayHeader
 import yt.ivy.librecanteen.ui.formatDeadline
 import yt.ivy.librecanteen.ui.formatMoney
@@ -94,6 +97,8 @@ fun LunchScreen(
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
     onSelect: (LocalDate) -> Unit,
+    onPickMonth: (YearMonth) -> Unit,
+    onInitialScroll: () -> Boolean,
     onToggleMode: () -> Unit,
     onAction: (LocalDate, Meal) -> Unit,
     onNote: (LocalDate, Meal, String) -> Unit,
@@ -115,6 +120,15 @@ fun LunchScreen(
                 duration = SnackbarDuration.Short,
             )
             if (result == SnackbarResult.ActionPerformed) event.undo?.invoke()
+        }
+    }
+
+    val listState = rememberLazyListState()
+    LaunchedEffect(mode) {
+        // Only the first time the week list is shown after the app started.
+        if (mode == CalendarMode.WEEK) {
+            val index = state.week.indexOf(LocalDate.now())
+            if (index >= 0 && onInitialScroll()) listState.scrollToItem(index)
         }
     }
 
@@ -142,17 +156,18 @@ fun LunchScreen(
                 }
             } else {
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     if (mode == CalendarMode.WEEK) {
-                        items(state.weekdays, key = { it.toString() }) { day ->
+                        items(state.week, key = { it.toString() }) { day ->
                             DaySection(day, state.days[day], state, showHeader = true, onAction, onNote, onExchangePut, onExchangeWithdraw)
                         }
                     } else {
                         item(key = "calendar") {
-                            MonthCalendar(state, onPreviousMonth, onNextMonth, onSelect)
+                            MonthCalendar(state, onPreviousMonth, onNextMonth, onSelect, onPickMonth)
                         }
                         item(key = "day-${state.anchor}") {
                             DaySection(state.anchor, state.days[state.anchor], state, showHeader = false, onAction, onNote, onExchangePut, onExchangeWithdraw)
@@ -162,8 +177,8 @@ fun LunchScreen(
             }
         }
         val barLabel = if (mode == CalendarMode.WEEK) {
-            val first = state.weekdays.first()
-            val last = state.weekdays.last()
+            val first = state.week.first()
+            val last = state.week.last()
             "${first.dayOfMonth}.${first.monthValue}. – ${last.dayOfMonth}.${last.monthValue}."
         } else {
             formatDayHeader(state.anchor).replaceFirst(' ', ',').replace("\u00a0", " ")
@@ -186,22 +201,23 @@ private fun MonthCalendar(
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
     onSelect: (LocalDate) -> Unit,
+    onPickMonth: (YearMonth) -> Unit,
 ) {
     val today = LocalDate.now()
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onPreviousMonth, modifier = Modifier.size(36.dp)) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.month_previous))
-            }
-            Text(
-                formatMonth(state.month),
-                style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.weight(1f),
-            )
-            IconButton(onClick = onNextMonth, modifier = Modifier.size(36.dp)) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.month_next))
-            }
+    var picking by remember { mutableStateOf(false) }
+    Column(
+        Modifier.fillMaxWidth().horizontalSwipe(onPrevious = onPreviousMonth, onNext = onNextMonth),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .clip(MaterialTheme.shapes.small)
+                .clickable(onClickLabel = stringResource(R.string.month_pick)) { picking = true }
+                .padding(start = 4.dp, top = 4.dp, bottom = 4.dp),
+        ) {
+            Text(formatMonth(state.month), style = MaterialTheme.typography.titleMedium)
+            Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
         }
         Row(Modifier.fillMaxWidth()) {
             DayOfWeek.entries.forEach { dow ->
@@ -228,6 +244,12 @@ private fun MonthCalendar(
             }
         }
     }
+    if (picking) {
+        MonthPickerDialog(state.month, onDismiss = { picking = false }) { month ->
+            picking = false
+            onPickMonth(month)
+        }
+    }
 }
 
 private val CIRCLE_SIZE = 40.dp
@@ -246,7 +268,7 @@ private fun DayCircle(day: LocalDate, menu: DayMenu?, selected: Boolean, today: 
     }
     val content = when {
         selected -> colors.onPrimary
-        weekend || (menu != null && !hasMenu) -> colors.outline
+        !hasMenu && (weekend || menu != null) -> colors.outline
         else -> colors.onSurface
     }
     Box(
@@ -255,7 +277,7 @@ private fun DayCircle(day: LocalDate, menu: DayMenu?, selected: Boolean, today: 
             .clip(CircleShape)
             .background(background)
             .then(if (today && !selected) Modifier.border(1.5.dp, colors.primary, CircleShape) else Modifier)
-            .clickable(enabled = !weekend) { onSelect(day) },
+            .clickable { onSelect(day) },
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -274,6 +296,52 @@ private fun DayCircle(day: LocalDate, menu: DayMenu?, selected: Boolean, today: 
             )
         }
     }
+}
+
+@Composable
+private fun MonthPickerDialog(current: YearMonth, onDismiss: () -> Unit, onPick: (YearMonth) -> Unit) {
+    var year by remember { mutableIntStateOf(current.year) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.dialog_cancel)) } },
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { year-- }) {
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.year_previous))
+                }
+                Text(year.toString(), textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+                IconButton(onClick = { year++ }) {
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.year_next))
+                }
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                (1..12).chunked(3).forEach { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { number ->
+                            val month = YearMonth.of(year, number)
+                            val selected = month == current
+                            Surface(
+                                onClick = { onPick(month) },
+                                shape = MaterialTheme.shapes.medium,
+                                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text(
+                                    java.time.Month.of(number).getDisplayName(TextStyle.SHORT_STANDALONE, Locale.getDefault()),
+                                    textAlign = TextAlign.Center,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.padding(vertical = 12.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+    )
 }
 
 @Composable
