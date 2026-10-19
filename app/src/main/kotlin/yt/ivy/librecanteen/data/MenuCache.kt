@@ -66,7 +66,7 @@ class FileMenuCache(
     }
 
     private fun DayMenu.withoutOperations() =
-        copy(meals = meals.map { it.copy(action = null, noteAction = null) })
+        copy(meals = meals.map { it.copy(action = null, noteAction = null, exchangePut = null, exchangeWithdraw = null) })
 
     private companion object {
         const val RETENTION_DAYS = 21L

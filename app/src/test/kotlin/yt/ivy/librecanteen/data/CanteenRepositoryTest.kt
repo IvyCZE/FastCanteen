@@ -77,6 +77,16 @@ private class FakeCanteen : CanteenProvider {
         return AllergenSettings(emptyList(), displayMode)
     }
 
+    override suspend fun putIntoExchange(day: LocalDate, meal: Meal, quantity: Int): DayMenu {
+        requireSession()
+        return DayMenu(day, emptyList())
+    }
+
+    override suspend fun withdrawFromExchange(day: LocalDate, meal: Meal): DayMenu {
+        requireSession()
+        return DayMenu(day, emptyList())
+    }
+
     override suspend fun exchangeOffers(): List<ExchangeOffer> {
         requireSession()
         return emptyList()

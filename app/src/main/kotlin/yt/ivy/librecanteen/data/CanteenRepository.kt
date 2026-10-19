@@ -83,6 +83,12 @@ class CanteenRepository(
     suspend fun order(day: LocalDate, meal: Meal): DayMenu =
         session(retry = false) { it.order(day, meal) }.also(cache::put)
 
+    suspend fun putIntoExchange(day: LocalDate, meal: Meal, quantity: Int): DayMenu =
+        session(retry = false) { it.putIntoExchange(day, meal, quantity) }.also(cache::put)
+
+    suspend fun withdrawFromExchange(day: LocalDate, meal: Meal): DayMenu =
+        session(retry = false) { it.withdrawFromExchange(day, meal) }.also(cache::put)
+
     suspend fun exchangeOffers(): List<ExchangeOffer> = session { it.exchangeOffers() }
 
     suspend fun takeFromExchange(offer: ExchangeOffer): DayMenu =

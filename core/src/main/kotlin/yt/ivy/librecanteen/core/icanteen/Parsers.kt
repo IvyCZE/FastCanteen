@@ -8,6 +8,8 @@ import yt.ivy.librecanteen.core.model.AccountStatus
 import yt.ivy.librecanteen.core.model.ActionType
 import yt.ivy.librecanteen.core.model.DayMenu
 import yt.ivy.librecanteen.core.model.Dish
+import yt.ivy.librecanteen.core.model.ExchangePutAction
+import yt.ivy.librecanteen.core.model.ExchangeWithdrawAction
 import yt.ivy.librecanteen.core.model.Meal
 import yt.ivy.librecanteen.core.model.MealAction
 import yt.ivy.librecanteen.core.model.MealState
@@ -60,6 +62,7 @@ internal object DayMenuParser {
     private val ALLERGENS = Regex("""\(\s*(\d{1,2}[a-z]?(?:\s*,\s*\d{1,2}[a-z]?)*)\s*,?\s*\)""")
     private val PICKUP = Regex("""(\d{1,2}:\d{2}(?::\d{2})?)\D+(\d{1,2}:\d{2}(?::\d{2})?)""")
     private val NOTE_ACTION = Regex("""'(db/dbProcessOrder\.jsp\?[^']*?type=note&note=)'\s*\+[^+]+\+\s*'([^']*)'""")
+    private val EXCHANGE_PUT = Regex("""'(db/dbProcessOrder\.jsp\?[^']*?type=multiburza&amount=)'\s*\+[^+]+\+\s*'([^']*)'""")
     private val LIMIT = Regex("""(\d+)\s*/\s*(\d+)""")
 
     fun parse(date: LocalDate, html: String): DayMenu {
@@ -119,6 +122,17 @@ internal object DayMenuParser {
             ?.groupValues?.get(1)?.toInt()
             ?: if (ordered) 1 else 0
 
+        val exchangePut = item.selectFirst("button[id^=burza-amount][id$=submit]")?.attr("onclick")
+            ?.let { EXCHANGE_PUT.find(it) }
+            ?.let { found ->
+                val max = item.selectFirst("input[id^=burza-amount]")?.attr("max")?.toIntOrNull() ?: 1
+                ExchangePutAction(found.groupValues[1], found.groupValues[2], max)
+            }
+        val exchangeWithdraw = item.selectFirst("a[onclick*=type=minusburza]")?.let { link ->
+            val withdrawPath = ACTION_URL.find(link.attr("onclick"))?.groupValues?.get(1)
+            withdrawPath?.let { ExchangeWithdrawAction(it, QUANTITY.find(link.text())?.groupValues?.get(1)?.toInt() ?: 1) }
+        }
+
         val reason = item.selectFirst("[id^=reason-]")?.text()?.normalized()?.takeIf { it.isNotEmpty() }
 
         return Meal(
@@ -131,11 +145,13 @@ internal object DayMenuParser {
             lockedReason = if (state == MealState.LOCKED || state == MealState.ORDERED_LOCKED) reason else null,
             timings = parseTimings(item),
             action = action,
-            inExchange = item.selectFirst("i.fa-exchange") != null,
+            inExchange = exchangeWithdraw != null || item.selectFirst("i.fa-exchange") != null,
             // The canteen stores notes HTML-escaped and escapes them again in the input, so one more decode is needed.
             note = item.selectFirst("input[id^=note][id$=text]")?.attr("value")?.let { Parser.unescapeEntities(it, false) }?.trim(),
             noteAction = item.selectFirst("input[id^=note][id$=submit]")?.attr("onclick")?.let { NOTE_ACTION.find(it) }
                 ?.let { NoteAction(it.groupValues[1], it.groupValues[2]) },
+            exchangePut = exchangePut,
+            exchangeWithdraw = exchangeWithdraw,
         )
     }
 

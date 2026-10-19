@@ -87,6 +87,23 @@ public data class NoteAction(val prefix: String, val suffix: String) {
     public fun path(note: String): String = prefix + java.net.URLEncoder.encode(note, Charsets.UTF_8) + suffix
 }
 
+/**
+ * Server-signed operation that puts part of an ordered meal into the exchange ("burza"). The quantity goes between
+ * [prefix] and [suffix]; at most [maxQuantity] pieces can be offered. Like [MealAction] it is valid only for the
+ * page it was read from.
+ */
+@Serializable
+public data class ExchangePutAction(val prefix: String, val suffix: String, val maxQuantity: Int) {
+    public fun path(quantity: Int): String {
+        require(quantity in 1..maxQuantity) { "Quantity must be between 1 and $maxQuantity" }
+        return "$prefix$quantity$suffix"
+    }
+}
+
+/** Server-signed operation that takes [quantity] pieces back from the exchange; valid only for its page. */
+@Serializable
+public data class ExchangeWithdrawAction(val path: String, val quantity: Int)
+
 @Serializable
 public data class MealTimings(
     val pickupFrom: LocalTime?,
@@ -116,7 +133,14 @@ public data class Meal(
     /** Note stored on the order; null when the order cannot carry one. */
     val note: String? = null,
     val noteAction: NoteAction? = null,
+    /** Present when part of the order can be offered in the exchange. */
+    val exchangePut: ExchangePutAction? = null,
+    /** Present when part of the order is in the exchange and can be taken back. */
+    val exchangeWithdraw: ExchangeWithdrawAction? = null,
 )
+
+/** How many pieces of the order are currently offered in the exchange. */
+public val Meal.exchangedQuantity: Int get() = exchangeWithdraw?.quantity ?: 0
 
 /**
  * Whether any dish of the meal declares an allergen the user selected. Canteens often list codes for the soup

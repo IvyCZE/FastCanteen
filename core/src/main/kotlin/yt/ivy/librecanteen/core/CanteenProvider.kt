@@ -53,6 +53,22 @@ public interface CanteenProvider {
      */
     public suspend fun takeFromExchange(offer: ExchangeOffer): DayMenu
 
+    /**
+     * Offers [quantity] pieces of the ordered [meal] in the exchange and returns the day as the server now reports
+     * it. The pieces stay ordered until another user takes them. [meal] must offer [Meal.exchangePut].
+     *
+     * @throws CanteenException.OrderNotApplied if the meal is not in the exchange afterwards.
+     */
+    public suspend fun putIntoExchange(day: LocalDate, meal: Meal, quantity: Int): DayMenu
+
+    /**
+     * Takes the pieces of [meal] back from the exchange, if nobody took them yet. [meal] must offer
+     * [Meal.exchangeWithdraw].
+     *
+     * @throws CanteenException.OrderNotApplied if the exchanged quantity did not drop.
+     */
+    public suspend fun withdrawFromExchange(day: LocalDate, meal: Meal): DayMenu
+
     /** The user's allergen preferences as configured in the canteen's settings. */
     public suspend fun allergenSettings(): AllergenSettings
 

@@ -5,12 +5,16 @@ import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
 import yt.ivy.librecanteen.core.CanteenException
 import yt.ivy.librecanteen.core.model.MealState
+import yt.ivy.librecanteen.core.model.exchangedQuantity
 import java.time.LocalDate
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ExchangeTest {
@@ -102,6 +106,108 @@ class ExchangeTest {
         val offer = loadOffer().copy(path = "db/dbProcessOrder.jsp?time=1&token=T&ID=1&day=2026-10-19&type=delete")
 
         assertFailsWith<CanteenException.UnsupportedLayout> { client.takeFromExchange(offer) }
+        assertEquals(1, server.requestCount)
+    }
+}
+
+class OwnExchangeTest {
+    private lateinit var server: MockWebServer
+    private lateinit var client: ICanteenClient
+    private val day = LocalDate.of(2026, 10, 19)
+
+    @BeforeTest
+    fun setUp() {
+        server = MockWebServer().apply { start() }
+        client = ICanteenClient(server.url("/"))
+    }
+
+    @AfterTest
+    fun tearDown() {
+        server.close()
+    }
+
+    private fun ok(body: String) = MockResponse.Builder().code(200).body(body).build()
+
+    private suspend fun load(name: String) = run {
+        server.enqueue(ok(fixture(name)))
+        client.menu(day).meals[0].also { server.takeRequest() }
+    }
+
+    @Test
+    fun `an ordered meal that can be offered carries the put operation`() = runTest {
+        val meal = load("day_ordered_burza_offer.html")
+
+        val put = assertNotNull(meal.exchangePut)
+        assertEquals(1, put.maxQuantity)
+        assertTrue("type=multiburza&amount=1&" in put.path(1), put.path(1))
+        assertNull(meal.exchangeWithdraw)
+        assertEquals(0, meal.exchangedQuantity)
+        assertFalse(meal.inExchange)
+        assertFailsWith<IllegalArgumentException> { put.path(2) }
+    }
+
+    @Test
+    fun `a meal in the exchange carries the withdraw operation`() = runTest {
+        val meal = load("day_ordered_in_exchange.html")
+
+        assertTrue(meal.inExchange)
+        assertEquals(1, meal.exchangedQuantity)
+        assertTrue("type=minusburza" in meal.exchangeWithdraw!!.path)
+        assertNull(meal.exchangePut)
+    }
+
+    @Test
+    fun `putting a meal into the exchange is confirmed by the day`() = runTest {
+        val meal = load("day_ordered_burza_offer.html")
+        server.enqueue(ok(fixture("synthetic_order_ok.html")))
+        server.enqueue(ok(fixture("day_ordered_in_exchange.html")))
+
+        val updated = client.putIntoExchange(day, meal, 1)
+
+        val operation = server.takeRequest().requestLine
+        assertTrue("type=multiburza&amount=1&" in operation, operation)
+        assertEquals(1, updated.meals[0].exchangedQuantity)
+    }
+
+    @Test
+    fun `a put that leaves the day unchanged is not reported as success`() = runTest {
+        val meal = load("day_ordered_burza_offer.html")
+        server.enqueue(ok(fixture("synthetic_order_ok.html")))
+        server.enqueue(ok(fixture("day_ordered_burza_offer.html")))
+
+        assertFailsWith<CanteenException.OrderNotApplied> { client.putIntoExchange(day, meal, 1) }
+    }
+
+    @Test
+    fun `withdrawing a meal is confirmed by the day`() = runTest {
+        val meal = load("day_ordered_in_exchange.html")
+        server.enqueue(ok(fixture("synthetic_order_ok.html")))
+        server.enqueue(ok(fixture("day_ordered_burza_offer.html")))
+
+        val updated = client.withdrawFromExchange(day, meal)
+
+        val operation = server.takeRequest().requestLine
+        assertTrue("type=minusburza" in operation, operation)
+        assertEquals(0, updated.meals[0].exchangedQuantity)
+    }
+
+    @Test
+    fun `a withdraw that was too late is reported and nothing else is sent`() = runTest {
+        val meal = load("day_ordered_in_exchange.html")
+        server.enqueue(ok(fixture("synthetic_order_error.html")))
+
+        assertFailsWith<CanteenException.OrderRejected> { client.withdrawFromExchange(day, meal) }
+        assertEquals(2, server.requestCount)
+    }
+
+    @Test
+    fun `meals without the operations are refused before any request`() = runTest {
+        server.enqueue(ok(fixture("day_closed.html")))
+        val meal = client.menu(day).meals[0]
+        server.takeRequest()
+
+        assertFailsWith<IllegalArgumentException> { client.putIntoExchange(day, meal, 1) }
+        assertFailsWith<IllegalArgumentException> { client.withdrawFromExchange(day, meal) }
         assertEquals(1, server.requestCount)
     }
 }

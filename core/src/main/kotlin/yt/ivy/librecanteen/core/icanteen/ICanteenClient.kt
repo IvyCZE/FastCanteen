@@ -22,6 +22,7 @@ import yt.ivy.librecanteen.core.model.DayMenu
 import yt.ivy.librecanteen.core.model.ExchangeOffer
 import yt.ivy.librecanteen.core.model.Meal
 import yt.ivy.librecanteen.core.model.MealState
+import yt.ivy.librecanteen.core.model.exchangedQuantity
 import yt.ivy.librecanteen.core.model.OrderRecord
 import yt.ivy.librecanteen.core.model.Payment
 import java.io.IOException
@@ -127,6 +128,33 @@ public class ICanteenClient(
         val after = updated.meals.firstOrNull { it.label == offer.label }
         if (after == null || after.quantity <= before) throw CanteenException.OrderNotApplied()
         updated
+    }
+
+    override suspend fun putIntoExchange(day: LocalDate, meal: Meal, quantity: Int): DayMenu = mutations.withLock {
+        val action = meal.exchangePut ?: throw IllegalArgumentException("Meal cannot be put into the exchange")
+        if (!action.prefix.startsWith(ORDER_ENDPOINT) || "type=multiburza" !in action.prefix) {
+            throw CanteenException.UnsupportedLayout("unexpected exchange operation")
+        }
+        changeExchange(day, meal, action.path(quantity)) { after -> after.exchangedQuantity > meal.exchangedQuantity }
+    }
+
+    override suspend fun withdrawFromExchange(day: LocalDate, meal: Meal): DayMenu = mutations.withLock {
+        val action = meal.exchangeWithdraw ?: throw IllegalArgumentException("Meal is not in the exchange")
+        if (!action.path.startsWith(ORDER_ENDPOINT) || "type=minusburza" !in action.path) {
+            throw CanteenException.UnsupportedLayout("unexpected exchange operation")
+        }
+        changeExchange(day, meal, action.path) { after -> after.exchangedQuantity < meal.exchangedQuantity }
+    }
+
+    private suspend fun changeExchange(day: LocalDate, meal: Meal, path: String, applied: (Meal) -> Boolean): DayMenu {
+        // The success body is a credit fragment; refusals are JSON. The re-read below decides.
+        val body = fetch("${baseUrl}faces/secured/$path".toHttpUrl())
+        if (body.trim().startsWith("{")) OrderResponseParser.check(body)
+
+        val updated = DayMenuParser.parse(day, fetch(dayUrl(day)))
+        val after = updated.meals.firstOrNull { it.label == meal.label && it.course == meal.course }
+        if (after == null || !applied(after)) throw CanteenException.OrderNotApplied()
+        return updated
     }
 
     override suspend fun allergenSettings(): AllergenSettings =
