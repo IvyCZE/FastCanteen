@@ -126,4 +126,6 @@
     <string name="exchange_take_text_no_price">%1$s se hned objedná a cena se strhne z kreditu. Zrušit už to nepůjde.</string>
     <string name="exchange_pickup_point">Výdejna: %1$s</string>
     <string name="exchange_pieces">%1$d ks</string>
+    <string name="exchange_section_mine">Nabídnuto tebou</string>
+    <string name="exchange_section_others">Nabídky ostatních</string>
 </resources>

@@ -142,6 +142,7 @@ private fun MainScaffold(repository: CanteenRepository, settings: AppSettings, l
                         snackbar = snackbar,
                         onRefresh = exchangeVm::load,
                         onTake = exchangeVm::take,
+                        onWithdraw = exchangeVm::withdraw,
                     )
                 }
                 Tab.Lunch -> {

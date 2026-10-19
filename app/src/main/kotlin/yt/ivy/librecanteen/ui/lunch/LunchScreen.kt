@@ -64,6 +64,7 @@ import yt.ivy.librecanteen.core.model.DayMenu
 import yt.ivy.librecanteen.core.model.Dish
 import yt.ivy.librecanteen.core.model.Meal
 import yt.ivy.librecanteen.core.model.MealState
+import yt.ivy.librecanteen.core.model.exchangedQuantity
 import yt.ivy.librecanteen.core.model.triggers
 import yt.ivy.librecanteen.data.CalendarMode
 import yt.ivy.librecanteen.ui.UiText
@@ -73,6 +74,7 @@ import yt.ivy.librecanteen.ui.formatDayHeader
 import yt.ivy.librecanteen.ui.formatDeadline
 import yt.ivy.librecanteen.ui.formatMoney
 import yt.ivy.librecanteen.ui.theme.NumericStyle
+import yt.ivy.librecanteen.ui.theme.SwapHorizIcon
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -349,11 +351,20 @@ private fun MealCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(meal.label, style = MaterialTheme.typography.titleMedium)
                 if (ordered) {
-                    Icon(
-                        Icons.Filled.Check,
-                        contentDescription = stringResource(R.string.state_ordered),
-                        modifier = Modifier.padding(start = 6.dp).size(20.dp),
-                    )
+                    if (meal.inExchange) {
+                        Icon(SwapHorizIcon, contentDescription = null, modifier = Modifier.padding(start = 6.dp).size(20.dp))
+                        Text(
+                            exchangeLabel(meal),
+                            style = MaterialTheme.typography.titleSmall.merge(NumericStyle),
+                            modifier = Modifier.padding(start = 4.dp),
+                        )
+                    } else {
+                        Icon(
+                            Icons.Filled.Check,
+                            contentDescription = stringResource(R.string.state_ordered),
+                            modifier = Modifier.padding(start = 6.dp).size(20.dp),
+                        )
+                    }
                     if (meal.quantity > 1) {
                         Text("${meal.quantity}×", style = MaterialTheme.typography.titleSmall.merge(NumericStyle), modifier = Modifier.padding(start = 2.dp))
                     }
@@ -372,7 +383,7 @@ private fun MealCard(
             val flagged = meal.triggers(allergens)
             meal.dishes.forEach { DishLine(it, flagged) }
 
-            mealStatus(meal)?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+            meal.lockedReason?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
 
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Box(Modifier.weight(1f)) {
@@ -401,12 +412,12 @@ private fun MealCard(
     }
 }
 
+/** "In the exchange", with the offered share when only part of several pieces is in it. */
 @Composable
-private fun mealStatus(meal: Meal): String? {
-    val parts = mutableListOf<String>()
-    if (meal.inExchange) parts += stringResource(R.string.in_exchange)
-    meal.lockedReason?.let { parts += it }
-    return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
+private fun exchangeLabel(meal: Meal): String {
+    val label = stringResource(R.string.in_exchange)
+    val offered = meal.exchangedQuantity
+    return if (meal.quantity > 1 && offered in 1 until meal.quantity) "$label $offered/${meal.quantity}" else label
 }
 
 @Composable

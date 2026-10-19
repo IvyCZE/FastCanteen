@@ -15,6 +15,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -33,8 +34,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 import yt.ivy.librecanteen.R
+import yt.ivy.librecanteen.core.model.Dish
 import yt.ivy.librecanteen.core.model.ExchangeOffer
+import yt.ivy.librecanteen.core.model.exchangedQuantity
 import yt.ivy.librecanteen.core.model.Money
 import yt.ivy.librecanteen.ui.UiText
 import yt.ivy.librecanteen.ui.asString
@@ -50,6 +54,7 @@ fun ExchangeScreen(
     snackbar: SnackbarHostState,
     onRefresh: () -> Unit,
     onTake: (ExchangeOffer) -> Unit,
+    onWithdraw: (OwnOffer) -> Unit,
 ) {
     val context = LocalContext.current
     LaunchedEffect(Unit) { onRefresh() }
@@ -68,7 +73,7 @@ fun ExchangeScreen(
         val offers = state.offers
         val error = state.error
         when {
-            error != null && offers == null -> Column(
+            error != null && offers == null && state.mine.isEmpty() -> Column(
                 Modifier.fillMaxSize().padding(24.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -76,37 +81,77 @@ fun ExchangeScreen(
                 Text(error.asString(), style = MaterialTheme.typography.bodyMedium)
                 TextButton(onClick = onRefresh) { Text(stringResource(R.string.retry)) }
             }
-            offers == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            offers == null && state.mine.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-            offers.isEmpty() -> Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+            offers.isNullOrEmpty() && state.mine.isEmpty() -> Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
                 Text(
                     stringResource(R.string.exchange_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            else -> OfferList(offers, state, onTake)
+            else -> OfferList(offers.orEmpty(), state, onTake, onWithdraw)
         }
     }
 }
 
 @Composable
-private fun OfferList(offers: List<ExchangeOffer>, state: ExchangeState, onTake: (ExchangeOffer) -> Unit) {
+private fun OfferList(
+    offers: List<ExchangeOffer>,
+    state: ExchangeState,
+    onTake: (ExchangeOffer) -> Unit,
+    onWithdraw: (OwnOffer) -> Unit,
+) {
     var confirming by remember { mutableStateOf<ExchangeOffer?>(null) }
+    val idle = state.taking == null && state.withdrawing == null
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        if (state.mine.isNotEmpty()) {
+            item(key = "mine-heading") { SectionHeading(R.string.exchange_section_mine) }
+            items(state.mine, key = { "mine-${it.day}-${it.meal.label}" }) { own ->
+                ExchangeCard(
+                    label = own.meal.label,
+                    date = own.day,
+                    price = own.meal.price,
+                    dishes = own.meal.dishes,
+                    flagged = own.meal.dishes.any { it.triggers(state.allergens) },
+                    detail = stringResource(R.string.exchange_pieces, own.meal.exchangedQuantity),
+                    actionLabel = R.string.action_exchange_withdraw,
+                    outlined = true,
+                    busy = state.withdrawing == own,
+                    enabled = idle,
+                    onAction = { onWithdraw(own) },
+                )
+            }
+            item(key = "others-heading") { SectionHeading(R.string.exchange_section_others) }
+        }
+        if (offers.isEmpty()) {
+            item(key = "others-empty") {
+                Text(
+                    stringResource(R.string.exchange_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp),
+                )
+            }
+        }
         items(offers, key = { it.path }) { offer ->
-            OfferCard(
-                offer = offer,
+            ExchangeCard(
+                label = offer.label,
+                date = offer.date,
                 price = state.prices[OfferKey(offer.date, offer.label)],
+                dishes = offer.dishes,
                 flagged = offer.dishes.any { it.triggers(state.allergens) },
+                detail = "${stringResource(R.string.exchange_pickup_point, offer.pickupPoint)} · ${stringResource(R.string.exchange_pieces, offer.quantity)}",
+                actionLabel = R.string.exchange_take,
+                outlined = false,
                 busy = state.taking == offer,
-                enabled = state.taking == null,
-                onTake = { confirming = offer },
+                enabled = idle,
+                onAction = { confirming = offer },
             )
         }
     }
@@ -131,41 +176,57 @@ private fun OfferList(offers: List<ExchangeOffer>, state: ExchangeState, onTake:
 }
 
 @Composable
-private fun OfferCard(
-    offer: ExchangeOffer,
+private fun SectionHeading(title: Int) {
+    Text(
+        stringResource(title),
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(start = 4.dp, top = 4.dp),
+    )
+}
+
+@Composable
+private fun ExchangeCard(
+    label: String,
+    date: LocalDate,
     price: Money?,
+    dishes: List<Dish>,
     flagged: Boolean,
+    detail: String,
+    actionLabel: Int,
+    outlined: Boolean,
     busy: Boolean,
     enabled: Boolean,
-    onTake: () -> Unit,
+    onAction: () -> Unit,
 ) {
     Surface(
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        color = if (outlined) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(offer.label, style = MaterialTheme.typography.titleMedium)
+                    Text(label, style = MaterialTheme.typography.titleMedium)
                     Text(
-                        formatDayHeader(offer.date),
+                        formatDayHeader(date),
                         style = MaterialTheme.typography.bodySmall.merge(NumericStyle),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (outlined) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 price?.let { Text(formatMoney(it), style = MaterialTheme.typography.titleMedium.merge(NumericStyle)) }
             }
-            offer.dishes.forEach { DishLine(it, flagged) }
+            dishes.forEach { DishLine(it, flagged) }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    "${stringResource(R.string.exchange_pickup_point, offer.pickupPoint)} · ${stringResource(R.string.exchange_pieces, offer.quantity)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
-                )
-                Button(onClick = onTake, enabled = enabled, contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)) {
-                    if (busy) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp) else Text(stringResource(R.string.exchange_take))
+                Text(detail, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                val padding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                val content: @Composable () -> Unit = {
+                    if (busy) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp) else Text(stringResource(actionLabel))
+                }
+                if (outlined) {
+                    OutlinedButton(onClick = onAction, enabled = enabled, contentPadding = padding) { content() }
+                } else {
+                    Button(onClick = onAction, enabled = enabled, contentPadding = padding) { content() }
                 }
             }
         }

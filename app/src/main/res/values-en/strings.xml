@@ -126,4 +126,6 @@
     <string name="exchange_take_text_no_price">%1$s is ordered right away and its price is charged to your credit. It cannot be cancelled afterwards.</string>
     <string name="exchange_pickup_point">Pickup point: %1$s</string>
     <string name="exchange_pieces">%1$d pcs</string>
+    <string name="exchange_section_mine">Offered by you</string>
+    <string name="exchange_section_others">Offered by others</string>
 </resources>
