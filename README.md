@@ -56,6 +56,16 @@ Requires JDK 21 and the Android SDK (platform 36). Point Gradle at the SDK with 
 ./gradlew :app:assembleDebug                  # app/build/outputs/apk/debug/app-debug.apk
 ```
 
+A signed release build needs your own keystore. Keep it and its passwords outside the repository,
+describe it in a properties file (`storeFile`, `storePassword`, `keyAlias`, `keyPassword`) and run:
+
+```sh
+LIBRECANTEEN_KEYSTORE_PROPERTIES=/path/to/keystore.properties ./gradlew :app:assembleRelease
+```
+
+Without that variable the release APK is built unsigned. Updates only install over an earlier version
+signed with the same key, so back the keystore up.
+
 Parser tests run against anonymized HTML samples in `core/src/test/resources/fixtures/`.
 The `synthetic_*` samples were written by hand from the site's own scripts, not captured.
 When adding samples, remove names, usernames, addresses, balances, CSRF values and order tokens first.

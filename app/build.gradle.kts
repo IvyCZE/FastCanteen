@@ -1,10 +1,18 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
+
+// Signing secrets stay outside the repository: point LIBRECANTEEN_KEYSTORE_PROPERTIES at a
+// properties file (storeFile, storePassword, keyAlias, keyPassword). Without it the release
+// build is produced unsigned.
+val signingProperties = System.getenv("LIBRECANTEEN_KEYSTORE_PROPERTIES")
+    ?.let(::File)?.takeIf { it.isFile }
+    ?.let { file -> Properties().apply { file.inputStream().use(::load) } }
 
 android {
     namespace = "yt.ivy.librecanteen"
@@ -18,8 +26,20 @@ android {
         versionName = "0.1.0"
     }
 
+    signingConfigs {
+        if (signingProperties != null) {
+            create("release") {
+                storeFile = file(signingProperties.getProperty("storeFile"))
+                storePassword = signingProperties.getProperty("storePassword")
+                keyAlias = signingProperties.getProperty("keyAlias")
+                keyPassword = signingProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
