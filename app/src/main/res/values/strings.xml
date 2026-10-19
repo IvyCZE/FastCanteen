@@ -109,4 +109,21 @@
     <string name="calendar_week">Týden</string>
     <string name="calendar_month">Měsíc</string>
     <string name="settings_calendar_mode_hint">Přepnout lze také dlouhým podržením lišty s datem.</string>
+    <string name="dialog_cancel">Zrušit</string>
+    <string name="action_exchange_put">Do burzy</string>
+    <string name="action_exchange_withdraw">Z burzy</string>
+    <string name="exchange_put_title">Dát do burzy?</string>
+    <string name="exchange_put_text">%1$s zůstane tvoje, dokud ho nevezme jiný strávník. Do té doby ho můžeš vzít zpět.</string>
+    <string name="exchange_quantity">Počet kusů</string>
+    <string name="exchange_put_confirm">Dát do burzy</string>
+    <string name="msg_exchange_put">Nabídnuto v burze: %1$s</string>
+    <string name="msg_exchange_withdrawn">Vzato z burzy zpět: %1$s</string>
+    <string name="msg_exchange_taken">Objednáno z burzy: %1$s</string>
+    <string name="exchange_empty">V burze teď nejsou žádná jídla.</string>
+    <string name="exchange_take">Převzít</string>
+    <string name="exchange_take_title">Převzít z burzy?</string>
+    <string name="exchange_take_text">%1$s se hned objedná a cena %2$s se strhne z kreditu. Zrušit už to nepůjde.</string>
+    <string name="exchange_take_text_no_price">%1$s se hned objedná a cena se strhne z kreditu. Zrušit už to nepůjde.</string>
+    <string name="exchange_pickup_point">Výdejna: %1$s</string>
+    <string name="exchange_pieces">%1$d ks</string>
 </resources>

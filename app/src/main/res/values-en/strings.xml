@@ -109,4 +109,21 @@
     <string name="calendar_week">Week</string>
     <string name="calendar_month">Month</string>
     <string name="settings_calendar_mode_hint">You can also switch by long-pressing the date bar.</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="action_exchange_put">To exchange</string>
+    <string name="action_exchange_withdraw">Take back</string>
+    <string name="exchange_put_title">Put in the exchange?</string>
+    <string name="exchange_put_text">%1$s stays yours until another diner takes it. You can take it back until then.</string>
+    <string name="exchange_quantity">Pieces</string>
+    <string name="exchange_put_confirm">Put in exchange</string>
+    <string name="msg_exchange_put">Offered in the exchange: %1$s</string>
+    <string name="msg_exchange_withdrawn">Taken back from the exchange: %1$s</string>
+    <string name="msg_exchange_taken">Ordered from the exchange: %1$s</string>
+    <string name="exchange_empty">The exchange has no meals right now.</string>
+    <string name="exchange_take">Take</string>
+    <string name="exchange_take_title">Take from the exchange?</string>
+    <string name="exchange_take_text">%1$s is ordered right away and %2$s is charged to your credit. It cannot be cancelled afterwards.</string>
+    <string name="exchange_take_text_no_price">%1$s is ordered right away and its price is charged to your credit. It cannot be cancelled afterwards.</string>
+    <string name="exchange_pickup_point">Pickup point: %1$s</string>
+    <string name="exchange_pieces">%1$d pcs</string>
 </resources>

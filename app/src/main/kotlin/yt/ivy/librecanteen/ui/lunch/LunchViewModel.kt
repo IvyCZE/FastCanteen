@@ -180,6 +180,29 @@ class LunchViewModel(
         }
     }
 
+    fun putIntoExchange(day: LocalDate, meal: Meal, quantity: Int) {
+        if (meal.exchangePut == null) return
+        runOperation(day, meal) {
+            val updated = repository.putIntoExchange(day, meal, quantity)
+            _state.update { it.copy(days = it.days + (day to updated)) }
+            events.trySend(LunchEvent(UiText.Res(R.string.msg_exchange_put, listOf(meal.label))))
+        }
+    }
+
+    fun withdrawFromExchange(day: LocalDate, meal: Meal) {
+        if (meal.exchangeWithdraw == null) return
+        runOperation(day, meal) {
+            val updated = repository.withdrawFromExchange(day, meal)
+            _state.update { it.copy(days = it.days + (day to updated)) }
+            events.trySend(LunchEvent(UiText.Res(R.string.msg_exchange_withdrawn, listOf(meal.label))))
+        }
+    }
+
+    /** Takes over a day that changed elsewhere, e.g. after a meal was taken from the exchange. */
+    fun replaceDay(menu: DayMenu) {
+        _state.update { it.copy(days = it.days + (menu.date to menu)) }
+    }
+
     private fun apply(day: LocalDate, meal: Meal, offerUndo: Boolean) {
         if (meal.action == null) return
         runOperation(day, meal) {

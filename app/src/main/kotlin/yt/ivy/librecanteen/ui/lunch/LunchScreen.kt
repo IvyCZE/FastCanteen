@@ -44,6 +44,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -94,6 +95,8 @@ fun LunchScreen(
     onToggleMode: () -> Unit,
     onAction: (LocalDate, Meal) -> Unit,
     onNote: (LocalDate, Meal, String) -> Unit,
+    onExchangePut: (LocalDate, Meal, Int) -> Unit,
+    onExchangeWithdraw: (LocalDate, Meal) -> Unit,
 ) {
     val undoLabel = stringResource(R.string.undo)
     val context = LocalContext.current
@@ -143,14 +146,14 @@ fun LunchScreen(
                 ) {
                     if (mode == CalendarMode.WEEK) {
                         items(state.weekdays, key = { it.toString() }) { day ->
-                            DaySection(day, state.days[day], state, showHeader = true, onAction, onNote)
+                            DaySection(day, state.days[day], state, showHeader = true, onAction, onNote, onExchangePut, onExchangeWithdraw)
                         }
                     } else {
                         item(key = "calendar") {
                             MonthCalendar(state, onPreviousMonth, onNextMonth, onSelect)
                         }
                         item(key = "day-${state.anchor}") {
-                            DaySection(state.anchor, state.days[state.anchor], state, showHeader = false, onAction, onNote)
+                            DaySection(state.anchor, state.days[state.anchor], state, showHeader = false, onAction, onNote, onExchangePut, onExchangeWithdraw)
                         }
                     }
                 }
@@ -279,6 +282,8 @@ private fun DaySection(
     showHeader: Boolean,
     onAction: (LocalDate, Meal) -> Unit,
     onNote: (LocalDate, Meal, String) -> Unit,
+    onExchangePut: (LocalDate, Meal, Int) -> Unit,
+    onExchangeWithdraw: (LocalDate, Meal) -> Unit,
 ) {
     val isToday = day == LocalDate.now()
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -311,6 +316,8 @@ private fun DaySection(
                     allergenNames = state.allergenNames,
                     onAction = onAction,
                     onNote = onNote,
+                    onExchangePut = onExchangePut,
+                    onExchangeWithdraw = onExchangeWithdraw,
                 )
             }
         }
@@ -327,8 +334,11 @@ private fun MealCard(
     allergenNames: Map<String, String>,
     onAction: (LocalDate, Meal) -> Unit,
     onNote: (LocalDate, Meal, String) -> Unit,
+    onExchangePut: (LocalDate, Meal, Int) -> Unit,
+    onExchangeWithdraw: (LocalDate, Meal) -> Unit,
 ) {
     var showInfo by remember { mutableStateOf(false) }
+    var showPut by remember { mutableStateOf(false) }
     val ordered = meal.state == MealState.ORDERED || meal.state == MealState.ORDERED_LOCKED
     Surface(
         shape = MaterialTheme.shapes.large,
@@ -370,11 +380,25 @@ private fun MealCard(
                         NoteField(saved = meal.note.orEmpty(), enabled = !busy) { onNote(day, meal, it) }
                     }
                 }
-                ActionButton(meal, busy || offline) { onAction(day, meal) }
+                ActionButton(
+                    meal = meal,
+                    busy = busy || offline,
+                    onClick = { onAction(day, meal) },
+                    onExchangePut = { showPut = true },
+                    onExchangeWithdraw = { onExchangeWithdraw(day, meal) },
+                )
             }
         }
     }
     if (showInfo) MealInfoDialog(meal, allergenNames) { showInfo = false }
+    meal.exchangePut?.let { put ->
+        if (showPut) {
+            ExchangePutDialog(meal.label, put.maxQuantity, onDismiss = { showPut = false }) { quantity ->
+                showPut = false
+                onExchangePut(day, meal, quantity)
+            }
+        }
+    }
 }
 
 @Composable
@@ -386,7 +410,7 @@ private fun mealStatus(meal: Meal): String? {
 }
 
 @Composable
-private fun DishLine(dish: Dish, flagged: Boolean) {
+internal fun DishLine(dish: Dish, flagged: Boolean) {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
             dish.name,
@@ -440,8 +464,27 @@ private fun NoteField(saved: String, enabled: Boolean, onSave: (String) -> Unit)
 private const val NOTE_MAX_LENGTH = 200
 
 @Composable
-private fun ActionButton(meal: Meal, busy: Boolean, onClick: () -> Unit) {
+private fun ActionButton(
+    meal: Meal,
+    busy: Boolean,
+    onClick: () -> Unit,
+    onExchangePut: () -> Unit,
+    onExchangeWithdraw: () -> Unit,
+) {
     val padding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+    // Offered only on orders the canteen no longer lets you cancel, so it never competes with the buttons below.
+    if (meal.exchangeWithdraw != null) {
+        OutlinedButton(onClick = onExchangeWithdraw, enabled = !busy, contentPadding = padding) {
+            ButtonContent(busy, R.string.action_exchange_withdraw)
+        }
+        return
+    }
+    if (meal.exchangePut != null) {
+        OutlinedButton(onClick = onExchangePut, enabled = !busy, contentPadding = padding) {
+            ButtonContent(busy, R.string.action_exchange_put)
+        }
+        return
+    }
     when (meal.state) {
         MealState.ORDERABLE -> Button(onClick = onClick, enabled = !busy, contentPadding = padding) {
             ButtonContent(busy, R.string.action_order)
@@ -459,6 +502,30 @@ private fun ActionButton(meal: Meal, busy: Boolean, onClick: () -> Unit) {
 @Composable
 private fun ButtonContent(busy: Boolean, label: Int) {
     if (busy) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp) else Text(stringResource(label))
+}
+
+@Composable
+private fun ExchangePutDialog(label: String, max: Int, onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {
+    var quantity by remember { mutableIntStateOf(max) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.exchange_put_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.exchange_put_text, label))
+                if (max > 1) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.exchange_quantity), modifier = Modifier.weight(1f))
+                        TextButton(onClick = { quantity = (quantity - 1).coerceAtLeast(1) }) { Text("−") }
+                        Text(quantity.toString(), style = MaterialTheme.typography.titleMedium.merge(NumericStyle))
+                        TextButton(onClick = { quantity = (quantity + 1).coerceAtMost(max) }) { Text("+") }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { onConfirm(quantity) }) { Text(stringResource(R.string.exchange_put_confirm)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.dialog_cancel)) } },
+    )
 }
 
 @Composable

@@ -48,6 +48,8 @@ import yt.ivy.librecanteen.ui.lock.LockScreen
 import yt.ivy.librecanteen.ui.login.LoginScreen
 import yt.ivy.librecanteen.ui.login.LoginViewModel
 import yt.ivy.librecanteen.ui.lunch.LunchScreen
+import yt.ivy.librecanteen.ui.exchange.ExchangeScreen
+import yt.ivy.librecanteen.ui.exchange.ExchangeViewModel
 import yt.ivy.librecanteen.ui.lunch.LunchViewModel
 import yt.ivy.librecanteen.ui.settings.SettingsScreen
 import yt.ivy.librecanteen.ui.settings.SettingsViewModel
@@ -76,12 +78,10 @@ fun AppRoot(repository: CanteenRepository, settings: AppSettings, lock: AppLock)
     }
 }
 
-private enum class Tab(val label: Int, val enabled: Boolean = true) {
+private enum class Tab(val label: Int) {
     Info(R.string.tab_info),
     Lunch(R.string.tab_menu),
-
-    /** Layout for the meal exchange is waiting until its behaviour is known. */
-    Burza(R.string.tab_burza, enabled = false),
+    Burza(R.string.tab_burza),
 }
 
 private fun Tab.icon(): ImageVector = when (this) {
@@ -98,6 +98,9 @@ private fun MainScaffold(repository: CanteenRepository, settings: AppSettings, l
 
     val lunchVm: LunchViewModel = viewModel(factory = viewModelFactory { initializer { LunchViewModel(repository, settings) } })
     val historyVm: HistoryViewModel = viewModel(factory = viewModelFactory { initializer { HistoryViewModel(repository) } })
+    val exchangeVm: ExchangeViewModel = viewModel(
+        factory = viewModelFactory { initializer { ExchangeViewModel(repository, settings, lunchVm::replaceDay) } },
+    )
     val settingsVm: SettingsViewModel = viewModel(factory = viewModelFactory { initializer { SettingsViewModel(repository, settings) } })
 
     if (showSettings) {
@@ -117,7 +120,6 @@ private fun MainScaffold(repository: CanteenRepository, settings: AppSettings, l
                 Tab.entries.forEach { tab ->
                     NavigationBarItem(
                         selected = selected == tab.ordinal,
-                        enabled = tab.enabled,
                         onClick = { selected = tab.ordinal },
                         icon = { Icon(tab.icon(), contentDescription = null) },
                         label = { Text(stringResource(tab.label)) },
@@ -132,7 +134,17 @@ private fun MainScaffold(repository: CanteenRepository, settings: AppSettings, l
                     val state by historyVm.state.collectAsStateWithLifecycle()
                     HistoryScreen(state, historyVm::load)
                 }
-                Tab.Lunch, Tab.Burza -> {
+                Tab.Burza -> {
+                    val state by exchangeVm.state.collectAsStateWithLifecycle()
+                    ExchangeScreen(
+                        state = state,
+                        events = exchangeVm.eventFlow,
+                        snackbar = snackbar,
+                        onRefresh = exchangeVm::load,
+                        onTake = exchangeVm::take,
+                    )
+                }
+                Tab.Lunch -> {
                     val state by lunchVm.state.collectAsStateWithLifecycle()
                     val mode by settings.calendarMode.collectAsStateWithLifecycle()
                     LunchScreen(
@@ -149,6 +161,8 @@ private fun MainScaffold(repository: CanteenRepository, settings: AppSettings, l
                         onToggleMode = lunchVm::toggleMode,
                         onAction = lunchVm::apply,
                         onNote = lunchVm::saveNote,
+                        onExchangePut = lunchVm::putIntoExchange,
+                        onExchangeWithdraw = lunchVm::withdrawFromExchange,
                     )
                 }
             }
