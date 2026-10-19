@@ -1,5 +1,6 @@
 package yt.ivy.librecanteen.ui.lunch
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -402,7 +403,11 @@ private fun DaySection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 4.dp),
             )
-            else -> Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainerLow) {
+            else -> Surface(
+                shape = MaterialTheme.shapes.extraLarge,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+            ) {
                 Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     val shared = CommonDishes.leadingCount(menu.meals)
                     if (shared > 0) SharedDishes(menu.meals[0].dishes.take(shared), state.allergens)
@@ -430,8 +435,10 @@ private fun DaySection(
 /** What all of a day's meals start with, written once above the cards. */
 @Composable
 private fun SharedDishes(dishes: List<Dish>, allergens: Set<String>) {
-    Column(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        dishes.forEach { DishLine(it, allergens) }
+    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            dishes.forEach { DishLine(it, allergens) }
+        }
     }
 }
 
