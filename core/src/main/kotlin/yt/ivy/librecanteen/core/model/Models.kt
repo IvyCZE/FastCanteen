@@ -128,6 +128,20 @@ public fun Meal.triggers(selected: Set<String>): Boolean = dishes.any { it.trigg
 @Serializable
 public data class DayMenu(val date: LocalDate, val meals: List<Meal>)
 
+/**
+ * A meal another user put into the canteen's exchange ("burza"). [path] is the server-signed operation that
+ * takes it, relative to `faces/secured/`; like [MealAction] it is valid only for the page it was read from.
+ */
+public data class ExchangeOffer(
+    val date: LocalDate,
+    /** Variant label, e.g. "Oběd 1". */
+    val label: String,
+    val dishes: List<Dish>,
+    val pickupPoint: String,
+    val quantity: Int,
+    val path: String,
+)
+
 /** One line of the order history. */
 public data class OrderRecord(
     val date: LocalDate,

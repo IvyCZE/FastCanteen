@@ -4,6 +4,7 @@ import yt.ivy.librecanteen.core.model.AccountStatus
 import yt.ivy.librecanteen.core.model.AllergenSettings
 import yt.ivy.librecanteen.core.model.Credentials
 import yt.ivy.librecanteen.core.model.DayMenu
+import yt.ivy.librecanteen.core.model.ExchangeOffer
 import yt.ivy.librecanteen.core.model.Meal
 import yt.ivy.librecanteen.core.model.OrderRecord
 import yt.ivy.librecanteen.core.model.Payment
@@ -39,6 +40,18 @@ public interface CanteenProvider {
      * @throws CanteenException.OrderNotApplied if the stored note differs from [note] afterwards.
      */
     public suspend fun setNote(day: LocalDate, meal: Meal, note: String): DayMenu
+
+    /** Meals other users currently offer in the exchange; empty when there are none. */
+    public suspend fun exchangeOffers(): List<ExchangeOffer>
+
+    /**
+     * Takes [offer] from the exchange, which orders it and charges its price, and returns the offer's day as the
+     * server now reports it. [offer] must come from a recent [exchangeOffers] call.
+     *
+     * @throws CanteenException.OrderRejected if the canteen refuses, e.g. because someone else was faster.
+     * @throws CanteenException.OrderNotApplied if the canteen accepted the request but the order did not appear.
+     */
+    public suspend fun takeFromExchange(offer: ExchangeOffer): DayMenu
 
     /** The user's allergen preferences as configured in the canteen's settings. */
     public suspend fun allergenSettings(): AllergenSettings

@@ -19,6 +19,7 @@ import yt.ivy.librecanteen.core.model.AllergenSettings
 import yt.ivy.librecanteen.core.model.ActionType
 import yt.ivy.librecanteen.core.model.Credentials
 import yt.ivy.librecanteen.core.model.DayMenu
+import yt.ivy.librecanteen.core.model.ExchangeOffer
 import yt.ivy.librecanteen.core.model.Meal
 import yt.ivy.librecanteen.core.model.MealState
 import yt.ivy.librecanteen.core.model.OrderRecord
@@ -104,6 +105,27 @@ public class ICanteenClient(
         val updated = DayMenuParser.parse(day, fetch(dayUrl(day)))
         val after = updated.meals.firstOrNull { it.label == meal.label && it.course == meal.course }
         if (after?.note != clean) throw CanteenException.OrderNotApplied()
+        updated
+    }
+
+    override suspend fun exchangeOffers(): List<ExchangeOffer> =
+        ExchangeParser.parse(fetch(url("faces/secured/burza.jsp")))
+
+    override suspend fun takeFromExchange(offer: ExchangeOffer): DayMenu = mutations.withLock {
+        if (!offer.path.startsWith(ORDER_ENDPOINT) || "type=getburza" !in offer.path) {
+            throw CanteenException.UnsupportedLayout("unexpected exchange operation")
+        }
+
+        val before = DayMenuParser.parse(offer.date, fetch(dayUrl(offer.date)))
+            .meals.firstOrNull { it.label == offer.label }?.quantity ?: 0
+
+        // Success redirects to the main page; refusals are JSON.
+        val body = fetch("${baseUrl}faces/secured/${offer.path}".toHttpUrl())
+        if (body.trim().startsWith("{")) OrderResponseParser.check(body)
+
+        val updated = DayMenuParser.parse(offer.date, fetch(dayUrl(offer.date)))
+        val after = updated.meals.firstOrNull { it.label == offer.label }
+        if (after == null || after.quantity <= before) throw CanteenException.OrderNotApplied()
         updated
     }
 

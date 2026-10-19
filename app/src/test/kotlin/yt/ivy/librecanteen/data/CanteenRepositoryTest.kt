@@ -9,6 +9,7 @@ import yt.ivy.librecanteen.core.model.AccountStatus
 import yt.ivy.librecanteen.core.model.AllergenSettings
 import yt.ivy.librecanteen.core.model.Credentials
 import yt.ivy.librecanteen.core.model.DayMenu
+import yt.ivy.librecanteen.core.model.ExchangeOffer
 import yt.ivy.librecanteen.core.model.Meal
 import yt.ivy.librecanteen.core.model.MealTimings
 import yt.ivy.librecanteen.core.model.Money
@@ -33,6 +34,7 @@ private class FakeCanteen : CanteenProvider {
     var loggedOut = false
     var valid = false
     var orderCalls = 0
+    var takeCalls = 0
     var passwordChanges = mutableListOf<Pair<Credentials, String>>()
 
     override suspend fun login(credentials: Credentials) {
@@ -73,6 +75,17 @@ private class FakeCanteen : CanteenProvider {
     override suspend fun saveAllergenSettings(codes: Set<String>, displayMode: Int): AllergenSettings {
         requireSession()
         return AllergenSettings(emptyList(), displayMode)
+    }
+
+    override suspend fun exchangeOffers(): List<ExchangeOffer> {
+        requireSession()
+        return emptyList()
+    }
+
+    override suspend fun takeFromExchange(offer: ExchangeOffer): DayMenu {
+        takeCalls++
+        requireSession()
+        return DayMenu(offer.date, emptyList())
     }
 
     override suspend fun orderHistory(): List<OrderRecord> = emptyList()
@@ -126,6 +139,19 @@ class CanteenRepositoryTest {
         (1..5).map { async { repository.menu(day) } }.awaitAll()
 
         assertEquals(2, canteen.logins.size)
+    }
+
+    @Test
+    fun `taking a meal from the exchange is never retried on a new session`() = runTest {
+        val canteen = FakeCanteen()
+        val repository = repository(canteen)
+        repository.menu(day)
+        canteen.valid = false
+        val offer = ExchangeOffer(day, "Oběd 1", emptyList(), "Kuchyň", 1, "db/dbProcessOrder.jsp?type=getburza")
+
+        assertFailsWith<CanteenException.SessionExpired> { repository.takeFromExchange(offer) }
+
+        assertEquals(1, canteen.takeCalls)
     }
 
     @Test

@@ -4,6 +4,7 @@ import org.jsoup.Jsoup
 import yt.ivy.librecanteen.core.CanteenException
 import yt.ivy.librecanteen.core.model.Allergen
 import yt.ivy.librecanteen.core.model.AllergenSettings
+import yt.ivy.librecanteen.core.model.ExchangeOffer
 import yt.ivy.librecanteen.core.model.Money
 import yt.ivy.librecanteen.core.model.OrderRecord
 import yt.ivy.librecanteen.core.model.Payment
@@ -68,6 +69,30 @@ internal object OrderHistoryParser {
                 orderedCount = COUNT.find(cells[5])?.value?.toInt() ?: 0,
                 issuedCount = COUNT.find(cells[6])?.value?.toInt() ?: 0,
                 price = parseCzechMoney(cells[7]),
+            )
+        }
+    }
+}
+
+internal object ExchangeParser {
+    private val TARGET = Regex("""document\.location\s*=\s*'([^']+)'""")
+    private val COUNT = Regex("""(\d+)""")
+
+    fun parse(html: String): List<ExchangeOffer> {
+        val table = Jsoup.parse(html).selectFirst("table.tableDataShow")
+            ?: throw CanteenException.UnsupportedLayout("exchange table not found")
+        return table.select("tr").mapNotNull { row ->
+            val cells = row.select("> td")
+            if (cells.size != 6) return@mapNotNull null
+            val path = TARGET.find(cells[5].selectFirst("input[type=button]")?.attr("onclick").orEmpty())
+                ?.groupValues?.get(1) ?: return@mapNotNull null
+            ExchangeOffer(
+                date = DATE_CELL.find(cells[1].text().clean())?.value?.let(::parseDate) ?: return@mapNotNull null,
+                label = cells[0].text().clean(),
+                dishes = DayMenuParser.parseDishes(cells[2].text().clean()),
+                pickupPoint = cells[3].text().clean(),
+                quantity = COUNT.find(cells[4].text())?.value?.toInt() ?: 1,
+                path = path,
             )
         }
     }

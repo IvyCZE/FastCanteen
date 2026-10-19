@@ -12,6 +12,7 @@ import yt.ivy.librecanteen.core.model.AccountStatus
 import yt.ivy.librecanteen.core.model.AllergenSettings
 import yt.ivy.librecanteen.core.model.Credentials
 import yt.ivy.librecanteen.core.model.DayMenu
+import yt.ivy.librecanteen.core.model.ExchangeOffer
 import yt.ivy.librecanteen.core.model.Meal
 import yt.ivy.librecanteen.core.model.Money
 import yt.ivy.librecanteen.core.model.OrderRecord
@@ -81,6 +82,11 @@ class CanteenRepository(
 
     suspend fun order(day: LocalDate, meal: Meal): DayMenu =
         session(retry = false) { it.order(day, meal) }.also(cache::put)
+
+    suspend fun exchangeOffers(): List<ExchangeOffer> = session { it.exchangeOffers() }
+
+    suspend fun takeFromExchange(offer: ExchangeOffer): DayMenu =
+        session(retry = false) { it.takeFromExchange(offer) }.also(cache::put)
 
     suspend fun orderHistory(): List<OrderRecord> = session { it.orderHistory() }
 
