@@ -1,5 +1,6 @@
 package yt.ivy.librecanteen
 
+import android.content.Context
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.WindowManager
@@ -13,7 +14,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import yt.ivy.librecanteen.ui.theme.isDark
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import yt.ivy.librecanteen.ui.AppRoot
@@ -22,8 +23,12 @@ import yt.ivy.librecanteen.ui.theme.LibreCanteenTheme
 
 // BiometricPrompt needs a FragmentActivity; it is still a ComponentActivity for Compose.
 class MainActivity : FragmentActivity() {
-    private val locked = MutableStateFlow(true)
+    private val locked by lazy { (application as LibreCanteenApp).locked }
     private var stoppedAt = 0L
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLocale.wrap(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,6 +40,9 @@ class MainActivity : FragmentActivity() {
             if (enabled) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
             else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }.launchIn(lifecycleScope)
+
+        // Strings and the default locale are read when the activity is created, so a new language needs a new one.
+        app.settings.language.drop(1).onEach { recreate() }.launchIn(lifecycleScope)
 
         setContent {
             val themeMode by app.settings.themeMode.collectAsStateWithLifecycle()

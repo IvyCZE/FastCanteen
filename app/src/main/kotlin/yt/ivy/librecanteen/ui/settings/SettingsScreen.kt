@@ -74,9 +74,11 @@ import kotlinx.coroutines.launch
 import yt.ivy.librecanteen.R
 import yt.ivy.librecanteen.core.model.AllergenSettings
 import yt.ivy.librecanteen.data.Account
+import yt.ivy.librecanteen.data.AppLanguage
 import yt.ivy.librecanteen.data.AppSettings
 import yt.ivy.librecanteen.data.CalendarMode
 import yt.ivy.librecanteen.data.ThemeMode
+import yt.ivy.librecanteen.ui.theme.LanguageIcon
 import yt.ivy.librecanteen.ui.theme.PaletteIcon
 import yt.ivy.librecanteen.ui.theme.dynamicColorSupported
 import yt.ivy.librecanteen.data.CanteenRepository
@@ -191,6 +193,7 @@ class SettingsViewModel(
 
 private enum class SettingsPage(val title: Int, val summary: Int, val icon: ImageVector) {
     Customization(R.string.settings_cat_customize, R.string.settings_cat_customize_summary, PaletteIcon),
+    Language(R.string.settings_cat_language, R.string.settings_cat_language_summary, LanguageIcon),
     Account(R.string.settings_cat_account, R.string.settings_cat_account_summary, Icons.Filled.Person),
     Allergens(R.string.settings_allergens, R.string.settings_cat_allergens_summary, Icons.Filled.Warning),
     Notifications(R.string.settings_cat_notifications, R.string.settings_cat_notifications_summary, Icons.Filled.Notifications),
@@ -245,6 +248,7 @@ fun SettingsScreen(
             when (page) {
                 null -> SettingsHome(version) { pageName = it.name }
                 SettingsPage.Customization -> PageColumn { CustomizationPage(settings) }
+                SettingsPage.Language -> PageColumn { LanguagePage(settings) }
                 SettingsPage.Account -> PageColumn {
                     AccountPage(
                         account, password, onChangePassword, onPasswordDialogClosed, onSignOut,
@@ -310,6 +314,42 @@ private fun SettingsHome(version: String, onOpen: (SettingsPage) -> Unit) {
 }
 
 @Composable
+private fun <T> RadioChoices(options: List<T>, selected: T, label: @Composable (T) -> String, onSelect: (T) -> Unit) {
+    Column {
+        options.forEach { option ->
+            Row(
+                Modifier.fillMaxWidth().selectable(selected = selected == option, role = Role.RadioButton) { onSelect(option) },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(selected = selected == option, onClick = null)
+                Text(label(option), modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun LanguagePage(settings: AppSettings) {
+    val language by settings.language.collectAsStateWithLifecycle()
+    SettingsCard {
+        RadioChoices(
+            options = AppLanguage.entries,
+            selected = language,
+            label = {
+                stringResource(
+                    when (it) {
+                        AppLanguage.SYSTEM -> R.string.language_system
+                        AppLanguage.CZECH -> R.string.language_czech
+                        AppLanguage.ENGLISH -> R.string.language_english
+                    },
+                )
+            },
+            onSelect = settings::setLanguage,
+        )
+    }
+}
+
+@Composable
 private fun CustomizationPage(settings: AppSettings) {
     val themeMode by settings.themeMode.collectAsStateWithLifecycle()
     val dynamicColor by settings.dynamicColor.collectAsStateWithLifecycle()
@@ -317,27 +357,21 @@ private fun CustomizationPage(settings: AppSettings) {
 
     SettingsCard {
         Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-        Column {
-            ThemeMode.entries.forEach { option ->
-                Row(
-                    Modifier.fillMaxWidth().selectable(selected = themeMode == option, role = Role.RadioButton) { settings.setThemeMode(option) },
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    RadioButton(selected = themeMode == option, onClick = null)
-                    Text(
-                        stringResource(
-                            when (option) {
-                                ThemeMode.SYSTEM -> R.string.theme_system
-                                ThemeMode.LIGHT -> R.string.theme_light
-                                ThemeMode.DARK -> R.string.theme_dark
-                                ThemeMode.AMOLED -> R.string.theme_amoled
-                            },
-                        ),
-                        modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp),
-                    )
-                }
-            }
-        }
+        RadioChoices(
+            options = ThemeMode.entries,
+            selected = themeMode,
+            label = {
+                stringResource(
+                    when (it) {
+                        ThemeMode.SYSTEM -> R.string.theme_system
+                        ThemeMode.LIGHT -> R.string.theme_light
+                        ThemeMode.DARK -> R.string.theme_dark
+                        ThemeMode.AMOLED -> R.string.theme_amoled
+                    },
+                )
+            },
+            onSelect = settings::setThemeMode,
+        )
     }
     SettingsCard {
         SwitchRow(

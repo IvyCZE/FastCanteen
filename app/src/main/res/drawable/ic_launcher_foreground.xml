@@ -1,24 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    The logo's knife and spoon, placed so that the logo's circle (the launcher background color) is 72 dp wide,
+    which is the area every adaptive icon mask shows. The handles run past the canvas edge, so they reach the
+    edge of any mask. This layer is also the monochrome layer of the themed icon.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- plate -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="4"
-        android:pathData="M54,54m-17,0a17,17 0,1 1,34 0a17,17 0,1 1,-34 0" />
-    <!-- fork -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="3"
-        android:strokeLineCap="round"
-        android:pathData="M30,40L30,50M34,40L34,50M38,40L38,50M30,50Q34,56 38,50M34,56L34,70" />
-    <!-- knife -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M76,38Q82,48 76,58L76,70L72,70L72,38Z" />
+    <group
+        android:scaleX="0.061479"
+        android:scaleY="0.061479"
+        android:translateX="18"
+        android:translateY="18">
+        <path
+            android:strokeColor="#9DC8F2"
+            android:strokeWidth="68.3"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M592.9,585.58 a173.87,276.89 0 1,0 347.74,0 a173.87,276.89 0 1,0 -347.74,0 Z" />
+        <path
+            android:fillColor="#9DC8F2"
+            android:pathData="M732.14,1470 L732.14,951.16 C732.14,941.77 739.75,934.16 749.14,934.16 L784.39,934.16 C793.78,934.16 801.39,941.77 801.39,951.16 L801.39,1470 Z" />
+        <path
+            android:fillColor="#9DC8F2"
+            android:pathData="M314.57,1470 L314.57,951.97 C314.57,942.58 322.18,934.97 331.57,934.97 L451.84,934.97 C461.23,934.97 468.84,942.58 468.84,951.97 L468.84,1470 Z" />
+        <path
+            android:strokeColor="#9DC8F2"
+            android:strokeWidth="69.29"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M489.26,858.19 L314.57,308.69" />
+        <path
+            android:strokeColor="#9DC8F2"
+            android:strokeWidth="68.14"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M489.26,862.47 L314.57,862.47" />
+        <path
+            android:strokeColor="#9DC8F2"
+            android:strokeWidth="70.54"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M314.57,308.69 L314.57,851.02" />
+    </group>
 </vector>

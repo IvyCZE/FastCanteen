@@ -11,6 +11,7 @@ import java.time.LocalTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -84,7 +85,9 @@ class ParsersTest {
         assertEquals(MealState.ORDERED_LOCKED, menu.meals[0].state)
         assertEquals(1, menu.meals[0].quantity)
         assertEquals("Objednávka je již vydaná.", menu.meals[0].lockedReason)
+        assertTrue(menu.meals[0].issued)
         assertEquals(MealState.LOCKED, menu.meals[1].state)
+        assertFalse(menu.meals[1].issued)
     }
 
     @Test

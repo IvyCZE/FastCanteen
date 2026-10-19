@@ -17,6 +17,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.Constraints
+import yt.ivy.librecanteen.AppLocale
 import yt.ivy.librecanteen.LibreCanteenApp
 import yt.ivy.librecanteen.MainActivity
 import yt.ivy.librecanteen.R
@@ -67,7 +68,7 @@ class ReminderWorker(context: Context, params: WorkerParameters) : CoroutineWork
     }
 
     private fun notify(): Boolean {
-        val context = applicationContext
+        val context = AppLocale.wrap(applicationContext)
         val granted = Build.VERSION.SDK_INT < 33 ||
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
         if (!granted) return false

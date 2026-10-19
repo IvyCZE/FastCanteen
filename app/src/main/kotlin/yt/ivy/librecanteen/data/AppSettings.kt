@@ -5,10 +5,14 @@ import android.content.SharedPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.util.Locale
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK, AMOLED }
 
 enum class CalendarMode { WEEK, MONTH }
+
+/** [locale] is null for "follow the system", which is resolved when the app applies it. */
+enum class AppLanguage(val locale: Locale?) { SYSTEM(null), CZECH(Locale.forLanguageTag("cs")), ENGLISH(Locale.ENGLISH) }
 
 /** Non-secret preferences. Credentials live in [CredentialVault], never here. */
 class AppSettings(private val prefs: SharedPreferences) {
@@ -28,6 +32,14 @@ class AppSettings(private val prefs: SharedPreferences) {
 
     private val _calendarMode = MutableStateFlow(readEnum(KEY_CALENDAR, CalendarMode.WEEK))
     val calendarMode: StateFlow<CalendarMode> = _calendarMode.asStateFlow()
+
+    private val _language = MutableStateFlow(readEnum(KEY_LANGUAGE, AppLanguage.SYSTEM))
+    val language: StateFlow<AppLanguage> = _language.asStateFlow()
+
+    fun setLanguage(language: AppLanguage) {
+        prefs.edit().putString(KEY_LANGUAGE, language.name).apply()
+        _language.value = language
+    }
 
     fun setThemeMode(mode: ThemeMode) {
         prefs.edit().putString(KEY_THEME, mode.name).apply()
@@ -88,6 +100,7 @@ class AppSettings(private val prefs: SharedPreferences) {
         const val KEY_THEME = "theme_mode"
         const val KEY_DYNAMIC = "dynamic_color"
         const val KEY_CALENDAR = "calendar_mode"
+        const val KEY_LANGUAGE = "language"
         const val KEY_ALLERGEN_NAMES = "allergen_names"
         const val KEY_LOCK = "biometric_lock"
         const val KEY_REMINDERS = "reminders"

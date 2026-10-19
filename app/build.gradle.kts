@@ -55,6 +55,13 @@ android {
         compose = true
     }
 
+    // The language is chosen inside the app, so a bundle must not strip the languages the device is not set to.
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
+
     packaging {
         resources.excludes += setOf("/META-INF/{AL2.0,LGPL2.1}", "/META-INF/versions/**", "/META-INF/INDEX.LIST")
     }

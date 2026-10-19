@@ -45,6 +45,7 @@ import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -69,6 +70,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -321,23 +323,22 @@ private fun DayCircle(day: LocalDate, menu: DayMenu?, selected: Boolean, today: 
             .clickable { onSelect(day) },
         contentAlignment = Alignment.Center,
     ) {
+        // A drawn line instead of TextDecoration.Underline, because the underline thickness cannot be set there.
         Text(
             day.dayOfMonth.toString(),
             style = MaterialTheme.typography.bodyMedium.merge(NumericStyle),
             color = content,
+            modifier = if (ordered) Modifier.drawWithContent {
+                drawContent()
+                val y = size.height - UNDERLINE_OFFSET.toPx()
+                drawLine(content, Offset(0f, y), Offset(size.width, y), strokeWidth = UNDERLINE_WIDTH.toPx())
+            } else Modifier,
         )
-        if (ordered) {
-            Box(
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 5.dp)
-                    .size(5.dp)
-                    .clip(CircleShape)
-                    .background(if (selected) colors.onPrimary else colors.primary),
-            )
-        }
     }
 }
+
+private val UNDERLINE_WIDTH = 2.dp
+private val UNDERLINE_OFFSET = 3.dp
 
 @Composable
 private fun MonthPickerDialog(current: YearMonth, onDismiss: () -> Unit, onPick: (YearMonth) -> Unit) {
@@ -434,7 +435,10 @@ private fun DaySection(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         val shared = CommonDishes.leadingCount(menu.meals)
-                        if (shared > 0) SharedDishes(menu.meals[0].dishes.take(shared), state.allergens)
+                        if (shared > 0) {
+                            SharedDishes(menu.meals[0].dishes.take(shared), state.allergens)
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        }
                         menu.meals.forEach { meal ->
                             MealCard(
                                 day = day,
@@ -522,7 +526,8 @@ private fun MealCard(
 
             meal.lockedReason?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
 
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // An issued meal has nothing left to change, so its note, price and checkbox row is hidden.
+            if (!meal.issued) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(Modifier.weight(1f)) {
                     if (meal.noteAction != null && !offline) {
                         NoteField(saved = meal.note.orEmpty(), enabled = !busy) { onNote(day, meal, it) }

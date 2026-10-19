@@ -21,7 +21,8 @@ a calm, fast interface for the weekly menu, one-tap ordering, credit, payments a
 - Offline cache: the last loaded menus stay readable without a connection (ordering is disabled)
 - Optional reminder from Thursday when nothing is ordered for next week
 - Optional app lock with biometrics or the device screen lock
-- Czech and English, light and dark theme
+- Czech and English (follows the system or can be set in the app), light and dark theme
+- Two-step sign-in (welcome, then address and credentials on one screen) and a themed app icon that follows the wallpaper colors on Android 13+
 
 Not implemented yet: multiple portions (the author's canteen does not offer them).
 

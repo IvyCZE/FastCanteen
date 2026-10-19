@@ -5,13 +5,18 @@
     <string name="tab_menu">Lunches</string>
     <string name="tab_settings">Settings</string>
 
-    <string name="login_title">Sign in to your canteen</string>
-    <string name="login_address">Canteen address</string>
-    <string name="login_address_hint">e.g. canteen.your-school.cz</string>
-    <string name="login_username">Username</string>
-    <string name="login_password">Password</string>
+    <string name="login_tagline">A modern, unofficial app for accessing the iCanteen system.</string>
+    <string name="login_url_title">Canteen URL:</string>
+    <string name="login_url_text">Enter the web address you use to open your canteen\'s website.</string>
+    <string name="login_address_hint">e.g. canteen.example.com</string>
+    <string name="login_username">Username:</string>
+    <string name="login_username_hint">e.g. smith</string>
+    <string name="login_password">Password:</string>
     <string name="login_button">Sign in</string>
-    <string name="login_disclaimer">Unofficial iCanteen client. Your credentials stay on this device only.</string>
+    <string name="login_created_by">Created by</string>
+    <string name="login_privacy_policy">Privacy Policy</string>
+    <string name="login_language_czech">Czech</string>
+    <string name="login_language_english">English</string>
     <string name="show_password">Show password</string>
     <string name="hide_password">Hide password</string>
 
@@ -94,6 +99,11 @@
     <string name="info_pickup">Pickup</string>
     <string name="info_orders">Ordered</string>
     <string name="info_allergens">Allergens</string>
+    <string name="settings_cat_language">Language</string>
+    <string name="settings_cat_language_summary">Language of the whole app</string>
+    <string name="language_system">Follow system</string>
+    <string name="language_czech">Čeština</string>
+    <string name="language_english">English</string>
     <string name="settings_theme">Theme</string>
     <string name="theme_system">Follow system</string>
     <string name="theme_light">Light</string>

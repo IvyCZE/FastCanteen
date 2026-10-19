@@ -140,6 +140,8 @@ public data class Meal(
     val exchangePut: ExchangePutAction? = null,
     /** Present when part of the order is in the exchange and can be taken back. */
     val exchangeWithdraw: ExchangeWithdrawAction? = null,
+    /** The canteen reports the order as already picked up; it can no longer change. */
+    val issued: Boolean = false,
 )
 
 /** How many pieces of the order are currently offered in the exchange. */

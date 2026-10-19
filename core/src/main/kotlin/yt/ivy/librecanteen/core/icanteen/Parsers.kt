@@ -59,6 +59,7 @@ internal object DayMenuParser {
     private val ACTION_URL = Regex("""ajaxOrder\(\s*\w+\s*,\s*'([^']+)'""")
     private val TYPE_PARAM = Regex("""[?&]type=([^&]*)""")
     private val QUANTITY = Regex("""(\d+)\s*ks""")
+    private val ISSUED_REASON = Regex("""je již vydan""")
     private val ALLERGENS = Regex("""\(\s*(\d{1,2}[a-z]?(?:\s*,\s*\d{1,2}[a-z]?)*)\s*,?\s*\)""")
     private val PICKUP = Regex("""(\d{1,2}:\d{2}(?::\d{2})?)\D+(\d{1,2}:\d{2}(?::\d{2})?)""")
     private val NOTE_ACTION = Regex("""'(db/dbProcessOrder\.jsp\?[^']*?type=note&note=)'\s*\+[^+]+\+\s*'([^']*)'""")
@@ -152,6 +153,7 @@ internal object DayMenuParser {
                 ?.let { NoteAction(it.groupValues[1], it.groupValues[2]) },
             exchangePut = exchangePut,
             exchangeWithdraw = exchangeWithdraw,
+            issued = state == MealState.ORDERED_LOCKED && reason?.let { ISSUED_REASON.containsMatchIn(it) } == true,
         )
     }
 

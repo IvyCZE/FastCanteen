@@ -71,7 +71,7 @@ fun AppRoot(repository: CanteenRepository, settings: AppSettings, lock: AppLock)
     if (account == null) {
         val vm: LoginViewModel = viewModel(factory = viewModelFactory { initializer { LoginViewModel(repository) } })
         val state by vm.state.collectAsStateWithLifecycle()
-        LoginScreen(state, vm::signIn)
+        LoginScreen(state, onLanguage = settings::setLanguage, onSignIn = vm::signIn)
     } else {
         // Keyed by account so a different login never sees the previous user's screens.
         key(account) { MainScaffold(repository, settings, lock) }
