@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -35,6 +36,9 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -51,6 +55,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -64,13 +69,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle as ComposeTextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.flow.Flow
 import yt.ivy.librecanteen.R
 import yt.ivy.librecanteen.core.model.DayMenu
@@ -441,40 +452,45 @@ private fun MealCard(
         color = if (ordered) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(meal.label, style = MaterialTheme.typography.titleMedium)
-                if (ordered) {
-                    if (meal.inExchange) {
-                        Icon(SwapHorizIcon, contentDescription = null, modifier = Modifier.padding(start = 6.dp).size(20.dp))
-                        Text(
-                            exchangeLabel(meal),
-                            style = MaterialTheme.typography.titleSmall.merge(NumericStyle),
-                            modifier = Modifier.padding(start = 4.dp),
-                        )
-                    } else {
-                        Icon(
-                            Icons.Filled.Check,
-                            contentDescription = stringResource(R.string.state_ordered),
-                            modifier = Modifier.padding(start = 6.dp).size(20.dp),
-                        )
-                    }
-                    if (meal.quantity > 1) {
-                        Text("${meal.quantity}×", style = MaterialTheme.typography.titleSmall.merge(NumericStyle), modifier = Modifier.padding(start = 2.dp))
-                    }
+        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            // The meal's own name is its first dish that is not shared with the other meals of the day.
+            val title = meal.dishes.getOrNull(hiddenDishes) ?: meal.dishes.firstOrNull()
+            Row(verticalAlignment = Alignment.Top) {
+                Column(Modifier.weight(1f).padding(top = 6.dp, end = 8.dp)) {
+                    SqueezedText(title?.name ?: meal.label, MaterialTheme.typography.titleMedium)
+                    title?.let { AllergenCodes(it, allergens, Modifier.padding(top = 2.dp)) }
                 }
-                Spacer(Modifier.weight(1f))
-                meal.price?.let { Text(formatMoney(it), style = MaterialTheme.typography.titleMedium.merge(NumericStyle)) }
-                IconButton(onClick = { showInfo = true }, modifier = Modifier.size(36.dp)) {
-                    Icon(
-                        Icons.Outlined.Info,
-                        contentDescription = stringResource(R.string.meal_details),
-                        modifier = Modifier.size(20.dp),
-                    )
+                Row(Modifier.height(36.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (ordered) {
+                        if (meal.inExchange) {
+                            Icon(SwapHorizIcon, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Text(
+                                exchangeLabel(meal),
+                                style = MaterialTheme.typography.titleSmall.merge(NumericStyle),
+                                modifier = Modifier.padding(start = 4.dp),
+                            )
+                        } else {
+                            Icon(
+                                Icons.Filled.Check,
+                                contentDescription = stringResource(R.string.state_ordered),
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                        if (meal.quantity > 1) {
+                            Text("${meal.quantity}×", style = MaterialTheme.typography.titleSmall.merge(NumericStyle), modifier = Modifier.padding(start = 2.dp))
+                        }
+                    }
+                    IconButton(onClick = { showInfo = true }, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            Icons.Outlined.Info,
+                            contentDescription = stringResource(R.string.meal_details),
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
                 }
             }
 
-            meal.dishes.drop(hiddenDishes).forEach { DishLine(it, allergens) }
+            meal.dishes.drop(hiddenDishes + 1).forEach { DishLine(it, allergens) }
 
             meal.lockedReason?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
 
@@ -484,10 +500,12 @@ private fun MealCard(
                         NoteField(saved = meal.note.orEmpty(), enabled = !busy) { onNote(day, meal, it) }
                     }
                 }
-                ActionButton(
+                meal.price?.let { Text(formatMoney(it), style = MaterialTheme.typography.titleSmall.merge(NumericStyle)) }
+                OrderControl(
                     meal = meal,
                     ordered = ordered,
-                    busy = busy || offline,
+                    busy = busy,
+                    offline = offline,
                     onClick = { onAction(day, meal) },
                     onExchangePut = { showPut = true },
                     onExchangeWithdraw = { onExchangeWithdraw(day, meal) },
@@ -522,43 +540,78 @@ private val AllergenRed = Color(0xFFFF3B30)
  */
 @Composable
 internal fun DishLine(dish: Dish, selected: Set<String>, bullet: Boolean = false) {
-    val hits = dish.triggeringAllergens(selected)
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(
             if (bullet) "- ${dish.name}" else dish.name,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.weight(1f),
         )
-        if (dish.allergens.isNotEmpty()) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                if (hits.isNotEmpty()) {
-                    Icon(
-                        Icons.Filled.Warning,
-                        contentDescription = stringResource(R.string.allergen_warning),
-                        tint = AllergenRed,
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
-                Text(
-                    buildAnnotatedString {
-                        dish.allergens.forEachIndexed { index, code ->
-                            if (index > 0) append(",")
-                            if (code in hits) {
-                                withStyle(SpanStyle(color = AllergenRed, fontWeight = FontWeight.Bold)) { append(code) }
-                            } else {
-                                append(code)
-                            }
-                        }
-                    },
-                    style = MaterialTheme.typography.bodySmall.merge(NumericStyle),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.End,
-                    modifier = Modifier.widthIn(max = 96.dp),
-                )
-            }
-        }
+        AllergenCodes(dish, selected, Modifier.widthIn(max = 96.dp), TextAlign.End)
     }
 }
+
+@Composable
+private fun AllergenCodes(dish: Dish, selected: Set<String>, modifier: Modifier = Modifier, textAlign: TextAlign = TextAlign.Start) {
+    if (dish.allergens.isEmpty()) return
+    val hits = dish.triggeringAllergens(selected)
+    Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (hits.isNotEmpty()) {
+            Icon(
+                Icons.Filled.Warning,
+                contentDescription = stringResource(R.string.allergen_warning),
+                tint = AllergenRed,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+        Text(
+            buildAnnotatedString {
+                dish.allergens.forEachIndexed { index, code ->
+                    if (index > 0) append(",")
+                    if (code in hits) {
+                        withStyle(SpanStyle(color = AllergenRed, fontWeight = FontWeight.Bold)) { append(code) }
+                    } else {
+                        append(code)
+                    }
+                }
+            },
+            style = MaterialTheme.typography.bodySmall.merge(NumericStyle),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = textAlign,
+        )
+    }
+}
+
+/**
+ * A title that stays on one line when a little tighter letter spacing is enough. Beyond [TITLE_TIGHTENING_EM] the
+ * text would get hard to read, so it wraps at normal spacing instead.
+ */
+@Composable
+private fun SqueezedText(text: String, style: ComposeTextStyle, modifier: Modifier = Modifier) {
+    val measurer = rememberTextMeasurer()
+    BoxWithConstraints(modifier) {
+        val available = constraints.maxWidth
+        val baseSpacing = style.letterSpacing.value.takeIf { !it.isNaN() } ?: 0f
+        val fontSize = style.fontSize.value
+        val spacing = remember(text, style, available) {
+            val steps = (0..TITLE_TIGHTENING_STEPS).map { baseSpacing - it * TITLE_TIGHTENING_EM / TITLE_TIGHTENING_STEPS * fontSize }
+            steps.firstOrNull { candidate ->
+                available == Constraints.Infinity ||
+                    !measurer.measure(
+                        text,
+                        style.copy(letterSpacing = candidate.sp),
+                        softWrap = false,
+                        maxLines = 1,
+                        constraints = Constraints(maxWidth = available),
+                    ).didOverflowWidth
+            } ?: baseSpacing
+        }
+        Text(text, style = style.copy(letterSpacing = spacing.sp))
+    }
+}
+
+/** Most the title's letters may be pulled together, as a share of the font size. */
+private const val TITLE_TIGHTENING_EM = 0.05f
+private const val TITLE_TIGHTENING_STEPS = 5
 
 /** Compact, borderless note line; a check button appears once the text differs from what is stored. */
 @Composable
@@ -606,50 +659,65 @@ private fun NoteField(saved: String, enabled: Boolean, onSave: (String) -> Unit)
 
 private const val NOTE_MAX_LENGTH = 200
 
+/** A checkbox for ordering; where the meal can go to the exchange instead, that button takes its place. */
 @Composable
-private fun ActionButton(
+private fun OrderControl(
     meal: Meal,
     ordered: Boolean,
     busy: Boolean,
+    offline: Boolean,
     onClick: () -> Unit,
     onExchangePut: () -> Unit,
     onExchangeWithdraw: () -> Unit,
 ) {
+    val idle = !busy && !offline
+    // Filled so it stays readable on the tinted card of an ordered meal.
+    val quiet = ButtonDefaults.buttonColors(
+        containerColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        contentColor = MaterialTheme.colorScheme.primaryContainer,
+    )
     val padding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
     val size = Modifier.height(36.dp)
-    // Secondary actions are filled so they stay readable on the tinted card of an ordered meal.
-    val quiet = if (ordered) {
-        ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            contentColor = MaterialTheme.colorScheme.primaryContainer,
-        )
-    } else {
-        ButtonDefaults.filledTonalButtonColors()
-    }
-    // Offered only on orders the canteen no longer lets you cancel, so it never competes with the buttons below.
+    // Offered only on orders the canteen no longer lets you cancel, so it never competes with the checkbox.
     if (meal.exchangeWithdraw != null) {
-        Button(onClick = onExchangeWithdraw, enabled = !busy, colors = quiet, contentPadding = padding, modifier = size) {
+        Button(onClick = onExchangeWithdraw, enabled = idle, colors = quiet, contentPadding = padding, modifier = size) {
             ButtonContent(busy, R.string.action_exchange_withdraw)
         }
         return
     }
     if (meal.exchangePut != null) {
-        Button(onClick = onExchangePut, enabled = !busy, colors = quiet, contentPadding = padding, modifier = size) {
+        Button(onClick = onExchangePut, enabled = idle, colors = quiet, contentPadding = padding, modifier = size) {
             ButtonContent(busy, R.string.action_exchange_put)
         }
         return
     }
-    when (meal.state) {
-        MealState.ORDERABLE -> Button(onClick = onClick, enabled = !busy, contentPadding = padding, modifier = size) {
-            ButtonContent(busy, R.string.action_order)
+    val description = when (meal.state) {
+        MealState.ORDERABLE -> R.string.action_order
+        MealState.ORDERED -> R.string.action_cancel_order
+        MealState.REORDERABLE -> R.string.action_switch
+        MealState.ORDERED_LOCKED, MealState.LOCKED -> null
+    }?.let { stringResource(it) }
+    Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+        if (busy) {
+            CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+        } else {
+            CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 40.dp) {
+                Checkbox(
+                    checked = ordered,
+                    onCheckedChange = { onClick() },
+                    enabled = description != null && !offline,
+                    colors = if (ordered) {
+                        CheckboxDefaults.colors(
+                            checkedColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            checkmarkColor = MaterialTheme.colorScheme.primaryContainer,
+                        )
+                    } else {
+                        CheckboxDefaults.colors()
+                    },
+                    modifier = Modifier.semantics { description?.let { contentDescription = it } },
+                )
+            }
         }
-        MealState.ORDERED -> Button(onClick = onClick, enabled = !busy, colors = quiet, contentPadding = padding, modifier = size) {
-            ButtonContent(busy, R.string.action_cancel_order)
-        }
-        MealState.REORDERABLE -> Button(onClick = onClick, enabled = !busy, colors = quiet, contentPadding = padding, modifier = size) {
-            ButtonContent(busy, R.string.action_switch)
-        }
-        MealState.ORDERED_LOCKED, MealState.LOCKED -> Unit
     }
 }
 

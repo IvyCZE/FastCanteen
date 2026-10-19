@@ -11,7 +11,7 @@ a calm, fast interface for the weekly menu, one-tap ordering, credit, payments a
 
 - Week or month view of the menu (switch in settings or by long-pressing the date bar), with order and cancel deadlines, allergens, and canteen-stated reasons when a meal is locked
 - Light, dark and AMOLED themes, optionally using your wallpaper colors (Android 12+)
-- Order, cancel and switch meals with one tap (with "Undo"); every change is verified against the server
+- Order, cancel and switch meals with a checkbox on the meal card (with "Undo"); every change is verified against the server
 - Order history and payments
 - Change password (confirmed by logging in with the new one)
 - Sign-in is remembered; the login is stored encrypted with a non-exportable Android Keystore key
