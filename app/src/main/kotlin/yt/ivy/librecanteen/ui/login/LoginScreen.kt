@@ -102,10 +102,9 @@ class LoginViewModel(private val repository: CanteenRepository) : ViewModel() {
 private val FieldShape = RoundedCornerShape(16.dp)
 private val PanelShape = RoundedCornerShape(24.dp)
 
-// The sign-in form sits on a dark panel in every theme. Dark themes get a dark gray page instead of black,
-// the same gray as the panel, so in dark themes only the fields stand out.
-private val DarkPage = Color(0xFF262422)
-private val PanelColor = Color(0xFF262422)
+// The sign-in form sits on a dark panel in every theme. Dark themes get a dark gray page instead of black.
+private val DarkPage = Color(0xFF141312)
+private val PanelColor = Color(0xFF1C1B1A)
 private val PanelField = Color(0xFF1C1B1A)
 private val PanelInk = Color(0xFFF2EFEC)
 private val PanelError = Color(0xFFF2B8B5)
