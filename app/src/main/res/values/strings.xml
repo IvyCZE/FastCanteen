@@ -34,7 +34,6 @@
     <string name="action_cancel_order">Zrušit</string>
     <string name="action_switch">Přeobjednat</string>
     <string name="state_ordered">Objednáno</string>
-    <string name="state_ordered_locked">Objednáno, nelze zrušit</string>
     <string name="msg_ordered">Objednáno: %1$s</string>
     <string name="msg_cancelled">Zrušeno: %1$s</string>
     <string name="msg_switched">Přeobjednáno: %1$s</string>

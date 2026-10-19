@@ -51,6 +51,7 @@ import yt.ivy.librecanteen.ui.lunch.LunchScreen
 import yt.ivy.librecanteen.ui.lunch.LunchViewModel
 import yt.ivy.librecanteen.ui.settings.SettingsScreen
 import yt.ivy.librecanteen.ui.settings.SettingsViewModel
+import yt.ivy.librecanteen.ui.theme.NumericStyle
 import yt.ivy.librecanteen.ui.theme.RestaurantIcon
 import yt.ivy.librecanteen.ui.theme.SwapHorizIcon
 
@@ -105,13 +106,12 @@ private fun MainScaffold(repository: CanteenRepository, settings: AppSettings, l
         return
     }
 
-    val account by repository.account.collectAsStateWithLifecycle()
     val credit by repository.credit.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
-        topBar = { AppTopBar(account?.username.orEmpty(), credit) { showSettings = true } },
+        topBar = { AppTopBar(credit) { showSettings = true } },
         bottomBar = {
             NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
                 Tab.entries.forEach { tab ->
@@ -156,22 +156,25 @@ private fun MainScaffold(repository: CanteenRepository, settings: AppSettings, l
     }
 }
 
-/** Two rows: the app name with the settings button, and who is signed in with their credit. */
+/** One row: the app name, the credit, and the settings button. The username lives in settings. */
 @Composable
-private fun AppTopBar(username: String, credit: Money?, onSettings: () -> Unit) {
+private fun AppTopBar(credit: Money?, onSettings: () -> Unit) {
     Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.statusBarsPadding().padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 10.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-                IconButton(onClick = onSettings) {
-                    Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.tab_settings))
-                }
+        Row(
+            Modifier.statusBarsPadding().fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        ) {
+            Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+            if (credit != null) {
+                Text(
+                    formatMoney(credit),
+                    style = MaterialTheme.typography.titleMedium.merge(NumericStyle),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-            Text(
-                if (credit != null) "$username (${formatMoney(credit)})" else username,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            IconButton(onClick = onSettings) {
+                Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.tab_settings))
+            }
         }
     }
 }

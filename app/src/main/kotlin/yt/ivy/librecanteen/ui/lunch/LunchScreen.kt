@@ -338,6 +338,18 @@ private fun MealCard(
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(meal.label, style = MaterialTheme.typography.titleMedium)
+                if (ordered) {
+                    Icon(
+                        Icons.Filled.Check,
+                        contentDescription = stringResource(R.string.state_ordered),
+                        modifier = Modifier.padding(start = 6.dp).size(20.dp),
+                    )
+                    if (meal.quantity > 1) {
+                        Text("${meal.quantity}×", style = MaterialTheme.typography.titleSmall.merge(NumericStyle), modifier = Modifier.padding(start = 2.dp))
+                    }
+                }
+                Spacer(Modifier.weight(1f))
+                meal.price?.let { Text(formatMoney(it), style = MaterialTheme.typography.titleMedium.merge(NumericStyle)) }
                 IconButton(onClick = { showInfo = true }, modifier = Modifier.size(36.dp)) {
                     Icon(
                         Icons.Outlined.Info,
@@ -345,20 +357,12 @@ private fun MealCard(
                         modifier = Modifier.size(20.dp),
                     )
                 }
-                Spacer(Modifier.weight(1f))
-                meal.price?.let { Text(formatMoney(it), style = MaterialTheme.typography.titleMedium.merge(NumericStyle)) }
             }
 
             val flagged = meal.triggers(allergens)
             meal.dishes.forEach { DishLine(it, flagged) }
 
-            val status = mealStatus(meal)
-            if (status != null) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (ordered) Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Text(status, style = MaterialTheme.typography.bodySmall.merge(NumericStyle))
-                }
-            }
+            mealStatus(meal)?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
 
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Box(Modifier.weight(1f)) {
@@ -376,11 +380,6 @@ private fun MealCard(
 @Composable
 private fun mealStatus(meal: Meal): String? {
     val parts = mutableListOf<String>()
-    when (meal.state) {
-        MealState.ORDERED -> parts += stringResource(R.string.state_ordered) + if (meal.quantity > 1) " · ${meal.quantity}×" else ""
-        MealState.ORDERED_LOCKED -> parts += stringResource(R.string.state_ordered_locked) + if (meal.quantity > 1) " · ${meal.quantity}×" else ""
-        MealState.ORDERABLE, MealState.REORDERABLE, MealState.LOCKED -> Unit
-    }
     if (meal.inExchange) parts += stringResource(R.string.in_exchange)
     meal.lockedReason?.let { parts += it }
     return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
