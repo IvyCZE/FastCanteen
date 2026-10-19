@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -19,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -26,9 +29,13 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -54,9 +61,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -67,7 +78,6 @@ import yt.ivy.librecanteen.core.model.Dish
 import yt.ivy.librecanteen.core.model.Meal
 import yt.ivy.librecanteen.core.model.MealState
 import yt.ivy.librecanteen.core.model.exchangedQuantity
-import yt.ivy.librecanteen.core.model.triggers
 import yt.ivy.librecanteen.data.CalendarMode
 import yt.ivy.librecanteen.ui.UiText
 import yt.ivy.librecanteen.ui.asString
@@ -403,14 +413,8 @@ private fun DaySection(
 /** What all of a day's meals start with, written once above the cards. */
 @Composable
 private fun SharedDishes(dishes: List<Dish>, allergens: Set<String>) {
-    val flagged = dishes.any { it.triggers(allergens) }
     Column(Modifier.padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(
-            stringResource(R.string.shared_dishes),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        dishes.forEach { DishLine(it, flagged) }
+        dishes.forEach { DishLine(it, allergens, bullet = true) }
     }
 }
 
@@ -469,12 +473,11 @@ private fun MealCard(
                 }
             }
 
-            val flagged = meal.triggers(allergens)
-            meal.dishes.drop(hiddenDishes).forEach { DishLine(it, flagged) }
+            meal.dishes.drop(hiddenDishes).forEach { DishLine(it, allergens) }
 
             meal.lockedReason?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
 
-            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(Modifier.weight(1f)) {
                     if (meal.noteAction != null && !offline) {
                         NoteField(saved = meal.note.orEmpty(), enabled = !busy) { onNote(day, meal, it) }
@@ -482,6 +485,7 @@ private fun MealCard(
                 }
                 ActionButton(
                     meal = meal,
+                    ordered = ordered,
                     busy = busy || offline,
                     onClick = { onAction(day, meal) },
                     onExchangePut = { showPut = true },
@@ -509,55 +513,93 @@ private fun exchangeLabel(meal: Meal): String {
     return if (meal.quantity > 1 && offered in 1 until meal.quantity) "$label $offered/${meal.quantity}" else label
 }
 
+private val AllergenRed = Color(0xFFFF3B30)
+
+/**
+ * One dish with its allergen codes on the right. Codes that match the user's [selected] allergens turn red and get a
+ * warning icon in front of them; the dish name itself is left alone.
+ */
 @Composable
-internal fun DishLine(dish: Dish, flagged: Boolean) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+internal fun DishLine(dish: Dish, selected: Set<String>, bullet: Boolean = false) {
+    val hits = dish.triggeringAllergens(selected)
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(
-            dish.name,
+            if (bullet) "- ${dish.name}" else dish.name,
             style = MaterialTheme.typography.bodyMedium,
-            fontWeight = if (flagged) FontWeight.Bold else FontWeight.Normal,
-            color = if (flagged) MaterialTheme.colorScheme.error else Color.Unspecified,
             modifier = Modifier.weight(1f),
         )
         if (dish.allergens.isNotEmpty()) {
-            Text(
-                dish.allergens.joinToString(","),
-                style = MaterialTheme.typography.bodySmall.merge(NumericStyle),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.End,
-                modifier = Modifier.widthIn(max = 96.dp),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (hits.isNotEmpty()) {
+                    Icon(
+                        Icons.Filled.Warning,
+                        contentDescription = stringResource(R.string.allergen_warning),
+                        tint = AllergenRed,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                Text(
+                    buildAnnotatedString {
+                        dish.allergens.forEachIndexed { index, code ->
+                            if (index > 0) append(",")
+                            if (code in hits) {
+                                withStyle(SpanStyle(color = AllergenRed, fontWeight = FontWeight.Bold)) { append(code) }
+                            } else {
+                                append(code)
+                            }
+                        }
+                    },
+                    style = MaterialTheme.typography.bodySmall.merge(NumericStyle),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.widthIn(max = 96.dp),
+                )
+            }
         }
     }
 }
 
-/** Underlined note line; a check button appears once the text differs from what is stored. */
+/** Compact, borderless note line; a check button appears once the text differs from what is stored. */
 @Composable
 private fun NoteField(saved: String, enabled: Boolean, onSave: (String) -> Unit) {
     var text by remember(saved) { mutableStateOf(saved) }
     val dirty = text.trim() != saved
-    TextField(
+    val content = LocalContentColor.current
+    BasicTextField(
         value = text,
         onValueChange = { text = it.replace("<", "").replace('\n', ' ').take(NOTE_MAX_LENGTH) },
         enabled = enabled,
         singleLine = true,
-        textStyle = MaterialTheme.typography.bodyMedium,
-        placeholder = { Text(stringResource(R.string.note_hint), style = MaterialTheme.typography.bodyMedium) },
-        trailingIcon = {
-            if (dirty) {
-                IconButton(onClick = { onSave(text.trim()) }) {
-                    Icon(Icons.Filled.Check, contentDescription = stringResource(R.string.note_save))
+        textStyle = MaterialTheme.typography.bodyMedium.copy(color = content),
+        cursorBrush = SolidColor(content),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { if (dirty) onSave(text.trim()) }),
+        modifier = Modifier.fillMaxWidth(),
+        decorationBox = { field ->
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 36.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(Icons.Filled.Edit, contentDescription = null, tint = content.copy(alpha = 0.7f), modifier = Modifier.size(16.dp))
+                Box(Modifier.weight(1f)) {
+                    if (text.isEmpty()) {
+                        Text(
+                            stringResource(R.string.note_hint),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = content.copy(alpha = 0.7f),
+                            maxLines = 1,
+                        )
+                    }
+                    field()
+                }
+                if (dirty) {
+                    IconButton(onClick = { onSave(text.trim()) }, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Filled.Check, contentDescription = stringResource(R.string.note_save), modifier = Modifier.size(20.dp))
+                    }
                 }
             }
         },
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        keyboardActions = KeyboardActions(onDone = { if (dirty) onSave(text.trim()) }),
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = Color.Transparent,
-            unfocusedContainerColor = Color.Transparent,
-            disabledContainerColor = Color.Transparent,
-        ),
-        modifier = Modifier.fillMaxWidth(),
     )
 }
 
@@ -566,33 +608,44 @@ private const val NOTE_MAX_LENGTH = 200
 @Composable
 private fun ActionButton(
     meal: Meal,
+    ordered: Boolean,
     busy: Boolean,
     onClick: () -> Unit,
     onExchangePut: () -> Unit,
     onExchangeWithdraw: () -> Unit,
 ) {
     val padding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+    val size = Modifier.height(36.dp)
+    // Secondary actions are filled so they stay readable on the tinted card of an ordered meal.
+    val quiet = if (ordered) {
+        ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            contentColor = MaterialTheme.colorScheme.primaryContainer,
+        )
+    } else {
+        ButtonDefaults.filledTonalButtonColors()
+    }
     // Offered only on orders the canteen no longer lets you cancel, so it never competes with the buttons below.
     if (meal.exchangeWithdraw != null) {
-        OutlinedButton(onClick = onExchangeWithdraw, enabled = !busy, contentPadding = padding) {
+        Button(onClick = onExchangeWithdraw, enabled = !busy, colors = quiet, contentPadding = padding, modifier = size) {
             ButtonContent(busy, R.string.action_exchange_withdraw)
         }
         return
     }
     if (meal.exchangePut != null) {
-        OutlinedButton(onClick = onExchangePut, enabled = !busy, contentPadding = padding) {
+        Button(onClick = onExchangePut, enabled = !busy, colors = quiet, contentPadding = padding, modifier = size) {
             ButtonContent(busy, R.string.action_exchange_put)
         }
         return
     }
     when (meal.state) {
-        MealState.ORDERABLE -> Button(onClick = onClick, enabled = !busy, contentPadding = padding) {
+        MealState.ORDERABLE -> Button(onClick = onClick, enabled = !busy, contentPadding = padding, modifier = size) {
             ButtonContent(busy, R.string.action_order)
         }
-        MealState.ORDERED -> OutlinedButton(onClick = onClick, enabled = !busy, contentPadding = padding) {
+        MealState.ORDERED -> Button(onClick = onClick, enabled = !busy, colors = quiet, contentPadding = padding, modifier = size) {
             ButtonContent(busy, R.string.action_cancel_order)
         }
-        MealState.REORDERABLE -> OutlinedButton(onClick = onClick, enabled = !busy, contentPadding = padding) {
+        MealState.REORDERABLE -> Button(onClick = onClick, enabled = !busy, colors = quiet, contentPadding = padding, modifier = size) {
             ButtonContent(busy, R.string.action_switch)
         }
         MealState.ORDERED_LOCKED, MealState.LOCKED -> Unit

@@ -136,5 +136,5 @@
     <string name="settings_cat_notifications_summary">Order reminders</string>
     <string name="settings_version">Version %1$s</string>
     <string name="settings_cat_account">Account &amp; Security</string>
-    <string name="shared_dishes">With every lunch</string>
+    <string name="allergen_warning">Contains an allergen you selected</string>
 </resources>

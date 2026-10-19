@@ -118,7 +118,7 @@ private fun OfferList(
                     date = own.day,
                     price = own.meal.price,
                     dishes = own.meal.dishes,
-                    flagged = own.meal.dishes.any { it.triggers(state.allergens) },
+                    allergens = state.allergens,
                     detail = stringResource(R.string.exchange_pieces, own.meal.exchangedQuantity),
                     actionLabel = R.string.action_exchange_withdraw,
                     outlined = true,
@@ -145,7 +145,7 @@ private fun OfferList(
                 date = offer.date,
                 price = state.prices[OfferKey(offer.date, offer.label)],
                 dishes = offer.dishes,
-                flagged = offer.dishes.any { it.triggers(state.allergens) },
+                allergens = state.allergens,
                 detail = "${stringResource(R.string.exchange_pickup_point, offer.pickupPoint)} · ${stringResource(R.string.exchange_pieces, offer.quantity)}",
                 actionLabel = R.string.exchange_take,
                 outlined = false,
@@ -191,7 +191,7 @@ private fun ExchangeCard(
     date: LocalDate,
     price: Money?,
     dishes: List<Dish>,
-    flagged: Boolean,
+    allergens: Set<String>,
     detail: String,
     actionLabel: Int,
     outlined: Boolean,
@@ -216,7 +216,7 @@ private fun ExchangeCard(
                 }
                 price?.let { Text(formatMoney(it), style = MaterialTheme.typography.titleMedium.merge(NumericStyle)) }
             }
-            dishes.forEach { DishLine(it, flagged) }
+            dishes.forEach { DishLine(it, allergens) }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(detail, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
                 val padding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)

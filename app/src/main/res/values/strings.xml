@@ -136,5 +136,5 @@
     <string name="settings_cat_notifications_summary">Připomínky objednání</string>
     <string name="settings_version">Verze %1$s</string>
     <string name="settings_cat_account">Účet a zabezpečení</string>
-    <string name="shared_dishes">Ke všem obědům</string>
+    <string name="allergen_warning">Obsahuje tvůj alergen</string>
 </resources>

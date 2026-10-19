@@ -39,8 +39,11 @@ public data class Dish(val name: String, val allergens: List<String>) {
      * Whether the dish declares an allergen the user selected. Canteens list either a group ("1")
      * or a subtype ("1a"); a group matches any of its subtypes and the other way round.
      */
-    public fun triggers(selected: Set<String>): Boolean =
-        allergens.any { declared -> selected.any { chosen -> allergenCodesOverlap(declared, chosen) } }
+    public fun triggers(selected: Set<String>): Boolean = triggeringAllergens(selected).isNotEmpty()
+
+    /** The declared codes that match the user's selection, in declared order. */
+    public fun triggeringAllergens(selected: Set<String>): List<String> =
+        allergens.filter { declared -> selected.any { chosen -> allergenCodesOverlap(declared, chosen) } }
 }
 
 private fun allergenCodesOverlap(a: String, b: String): Boolean {
@@ -141,12 +144,6 @@ public data class Meal(
 
 /** How many pieces of the order are currently offered in the exchange. */
 public val Meal.exchangedQuantity: Int get() = exchangeWithdraw?.quantity ?: 0
-
-/**
- * Whether any dish of the meal declares an allergen the user selected. Canteens often list codes for the soup
- * only, so the whole meal counts as affected, not just the dish that carries the codes.
- */
-public fun Meal.triggers(selected: Set<String>): Boolean = dishes.any { it.triggers(selected) }
 
 /** A day's menu. [meals] is empty when the canteen has no menu for [date]. */
 @Serializable
