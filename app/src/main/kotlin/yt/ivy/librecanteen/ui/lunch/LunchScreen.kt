@@ -206,7 +206,7 @@ fun LunchScreen(
             val last = state.week.last()
             "${first.dayOfMonth}.${first.monthValue}. – ${last.dayOfMonth}.${last.monthValue}."
         } else {
-            formatDayHeader(state.anchor).replaceFirst(" ", ", ").replace("\u00a0", "")
+            formatDayHeader(state.anchor).replace("\u00a0", "")
         }
         DateBar(
             label = barLabel,
@@ -402,23 +402,25 @@ private fun DaySection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 4.dp),
             )
-            else -> {
-                val shared = CommonDishes.leadingCount(menu.meals)
-                if (shared > 0) SharedDishes(menu.meals[0].dishes.take(shared), state.allergens)
-                menu.meals.forEach { meal ->
-                    MealCard(
-                        day = day,
-                        meal = meal,
-                        busy = state.busy.contains(MealKey(day, meal.course, meal.label)),
-                        offline = state.offline,
-                        allergens = state.allergens,
-                        allergenNames = state.allergenNames,
-                        onAction = onAction,
-                        onNote = onNote,
-                        onExchangePut = onExchangePut,
-                        onExchangeWithdraw = onExchangeWithdraw,
-                        hiddenDishes = shared,
-                    )
+            else -> Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainerLow) {
+                Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val shared = CommonDishes.leadingCount(menu.meals)
+                    if (shared > 0) SharedDishes(menu.meals[0].dishes.take(shared), state.allergens)
+                    menu.meals.forEach { meal ->
+                        MealCard(
+                            day = day,
+                            meal = meal,
+                            busy = state.busy.contains(MealKey(day, meal.course, meal.label)),
+                            offline = state.offline,
+                            allergens = state.allergens,
+                            allergenNames = state.allergenNames,
+                            onAction = onAction,
+                            onNote = onNote,
+                            onExchangePut = onExchangePut,
+                            onExchangeWithdraw = onExchangeWithdraw,
+                            hiddenDishes = shared,
+                        )
+                    }
                 }
             }
         }
@@ -428,8 +430,8 @@ private fun DaySection(
 /** What all of a day's meals start with, written once above the cards. */
 @Composable
 private fun SharedDishes(dishes: List<Dish>, allergens: Set<String>) {
-    Column(Modifier.padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        dishes.forEach { DishLine(it, allergens, bullet = true) }
+    Column(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        dishes.forEach { DishLine(it, allergens) }
     }
 }
 
@@ -537,10 +539,10 @@ private val AllergenRed = Color(0xFFFF3B30)
  * warning icon in front of them; the dish name itself is left alone.
  */
 @Composable
-internal fun DishLine(dish: Dish, selected: Set<String>, bullet: Boolean = false) {
+internal fun DishLine(dish: Dish, selected: Set<String>) {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(
-            if (bullet) "- ${dish.name}" else dish.name,
+            dish.name,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.weight(1f),
         )

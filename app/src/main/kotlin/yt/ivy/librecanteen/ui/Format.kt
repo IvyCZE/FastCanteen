@@ -47,7 +47,7 @@ fun formatMoney(money: Money): String {
 fun formatDayHeader(date: LocalDate): String {
     val weekday = date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
         .replaceFirstChar { it.titlecase(Locale.getDefault()) }
-    return "$weekday ${date.dayOfMonth}.\u00a0${date.monthValue}."
+    return "$weekday, ${date.dayOfMonth}.\u00a0${date.monthValue}."
 }
 
 fun formatShortDate(date: LocalDate): String = "${date.dayOfMonth}.\u00a0${date.monthValue}.\u00a0${date.year}"
