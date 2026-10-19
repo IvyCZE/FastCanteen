@@ -30,11 +30,13 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
@@ -67,6 +69,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -461,24 +464,13 @@ private fun MealCard(
                     title?.let { AllergenCodes(it, allergens, Modifier.padding(top = 2.dp)) }
                 }
                 Row(Modifier.height(36.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (ordered) {
-                        if (meal.inExchange) {
-                            Icon(SwapHorizIcon, contentDescription = null, modifier = Modifier.size(20.dp))
-                            Text(
-                                exchangeLabel(meal),
-                                style = MaterialTheme.typography.titleSmall.merge(NumericStyle),
-                                modifier = Modifier.padding(start = 4.dp),
-                            )
-                        } else {
-                            Icon(
-                                Icons.Filled.Check,
-                                contentDescription = stringResource(R.string.state_ordered),
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
-                        if (meal.quantity > 1) {
-                            Text("${meal.quantity}×", style = MaterialTheme.typography.titleSmall.merge(NumericStyle), modifier = Modifier.padding(start = 2.dp))
-                        }
+                    if (ordered && meal.inExchange) {
+                        Icon(SwapHorizIcon, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Text(
+                            exchangeLabel(meal),
+                            style = MaterialTheme.typography.titleSmall.merge(NumericStyle),
+                            modifier = Modifier.padding(start = 4.dp),
+                        )
                     }
                     IconButton(onClick = { showInfo = true }, modifier = Modifier.size(36.dp)) {
                         Icon(
@@ -500,16 +492,22 @@ private fun MealCard(
                         NoteField(saved = meal.note.orEmpty(), enabled = !busy) { onNote(day, meal, it) }
                     }
                 }
-                meal.price?.let { Text(formatMoney(it), style = MaterialTheme.typography.titleSmall.merge(NumericStyle)) }
-                OrderControl(
-                    meal = meal,
-                    ordered = ordered,
-                    busy = busy,
-                    offline = offline,
-                    onClick = { onAction(day, meal) },
-                    onExchangePut = { showPut = true },
-                    onExchangeWithdraw = { onExchangeWithdraw(day, meal) },
-                )
+                // A meal that can no longer be ordered has nothing left to show here.
+                if (meal.state != MealState.LOCKED) {
+                    if (ordered && meal.quantity > 1) {
+                        Text("${meal.quantity}×", style = MaterialTheme.typography.titleSmall.merge(NumericStyle))
+                    }
+                    meal.price?.let { Text(formatMoney(it), style = MaterialTheme.typography.titleSmall.merge(NumericStyle)) }
+                    OrderControl(
+                        meal = meal,
+                        ordered = ordered,
+                        busy = busy,
+                        offline = offline,
+                        onClick = { onAction(day, meal) },
+                        onExchangePut = { showPut = true },
+                        onExchangeWithdraw = { onExchangeWithdraw(day, meal) },
+                    )
+                }
             }
         }
     }
@@ -676,19 +674,13 @@ private fun OrderControl(
         containerColor = MaterialTheme.colorScheme.onPrimaryContainer,
         contentColor = MaterialTheme.colorScheme.primaryContainer,
     )
-    val padding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
-    val size = Modifier.height(36.dp)
     // Offered only on orders the canteen no longer lets you cancel, so it never competes with the checkbox.
     if (meal.exchangeWithdraw != null) {
-        Button(onClick = onExchangeWithdraw, enabled = idle, colors = quiet, contentPadding = padding, modifier = size) {
-            ButtonContent(busy, R.string.action_exchange_withdraw)
-        }
+        ExchangeIconButton(Icons.Filled.Close, R.string.action_exchange_withdraw, busy, idle, quiet, onExchangeWithdraw)
         return
     }
     if (meal.exchangePut != null) {
-        Button(onClick = onExchangePut, enabled = idle, colors = quiet, contentPadding = padding, modifier = size) {
-            ButtonContent(busy, R.string.action_exchange_put)
-        }
+        ExchangeIconButton(SwapHorizIcon, R.string.action_exchange_put, busy, idle, quiet, onExchangePut)
         return
     }
     val description = when (meal.state) {
@@ -722,8 +714,21 @@ private fun OrderControl(
 }
 
 @Composable
-private fun ButtonContent(busy: Boolean, label: Int) {
-    if (busy) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp) else Text(stringResource(label))
+private fun ExchangeIconButton(
+    icon: ImageVector,
+    description: Int,
+    busy: Boolean,
+    enabled: Boolean,
+    colors: ButtonColors,
+    onClick: () -> Unit,
+) {
+    Button(onClick = onClick, enabled = enabled, colors = colors, contentPadding = PaddingValues(0.dp), modifier = Modifier.size(36.dp)) {
+        if (busy) {
+            CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+        } else {
+            Icon(icon, contentDescription = stringResource(description), modifier = Modifier.size(20.dp))
+        }
+    }
 }
 
 @Composable

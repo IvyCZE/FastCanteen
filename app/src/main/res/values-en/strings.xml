@@ -33,7 +33,6 @@
     <string name="action_order">Order</string>
     <string name="action_cancel_order">Cancel</string>
     <string name="action_switch">Switch</string>
-    <string name="state_ordered">Ordered</string>
     <string name="msg_ordered">Ordered: %1$s</string>
     <string name="msg_cancelled">Cancelled: %1$s</string>
     <string name="msg_switched">Switched to: %1$s</string>
