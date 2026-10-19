@@ -151,7 +151,7 @@ Two steps in `LoginScreen.kt`. The page follows the app theme: white in the ligh
 on white and white on dark gray; system bar icons follow the theme.
 1. **Welcome:** the logo (`drawable/ic_logo.xml`, from the author's SVG), name, tagline, sign-in button.
 2. **Form:** canteen address, username and password on one dark panel (`#1c1b1a`, the logo circle color), centered on
-   the whole page. The fields use the same color, so they show no box of their own.
+   the whole page. The fields are a step darker (`#141312`), so they show as boxes on the panel.
    The arrow in the password field signs in (a spinner while working); a small text link shows or hides the
    password; errors appear under the fields.
 The form has the app name with a back arrow on the right (as in the author's mockup); system Back returns to
@@ -249,8 +249,7 @@ Priority is not confirmed by the user; the assistant's suggestion is first.
 ## 9. Open items and unverified things
 
 - Reminders (`ReminderWorker`) have not been tested by the user yet.
-- Login fields and the panel share `#1c1b1a`, so the fields show no box. Check on the phone whether they still read as
-  input fields; a lighter field color is the fix if not.
+- Login fields (`#141312`) on the `#1c1b1a` panel: check on the phone that they read as input fields.
 - Sign-in flow, logo, school and language icon paths, launcher icon and its themed (monochrome) version were
   built without a device. Check the two steps on the phone (panel centered on the page, panel scrolling with
   the keyboard, back arrow position, dark gray page in dark theme, the language switch) and the home screen
@@ -281,6 +280,11 @@ Also update sections 5, 6, 8 and 9 above when they stop being true, and the READ
 visible behavior changes.
 
 ## Log
+
+### 2026-10-19, darker login fields
+- The login fields are `#141312`, a step darker than the `#1c1b1a` panel, because they blended into it.
+- Verified: `:core:test`, `:app:testDebugUnitTest`, `:app:lintDebug` (13 warnings, only `UseKtx` and
+  `UseTomlInstead`, read from the lint report), `:app:assembleDebug`. Not seen on a device.
 
 ### 2026-10-19, login panel and dark page colors
 - The login panel (the form backdrop) is `#1c1b1a`, the same as the logo circle. The dark-theme login page is
