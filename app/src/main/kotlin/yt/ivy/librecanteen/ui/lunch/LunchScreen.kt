@@ -404,31 +404,34 @@ private fun DaySection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 4.dp),
             )
-            else -> Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainerLow) {
-                val edge = MaterialTheme.colorScheme.outline
-                Column(
-                    // The surface clips the stripe to its rounded corners, so it follows the curve on the left.
-                    Modifier
-                        .drawBehind { drawRect(edge, size = Size(DAY_EDGE_WIDTH.toPx(), size.height)) }
-                        .padding(start = 12.dp, top = 8.dp, end = 8.dp, bottom = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+            else -> {
+                val line = MaterialTheme.colorScheme.primary
+                // Drawn rather than laid out: the title text measures itself, which rules out intrinsic sizes.
+                Surface(
+                    shape = MaterialTheme.shapes.extraLarge,
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    modifier = Modifier
+                        .drawBehind { drawRect(line, size = Size(DAY_LINE_WIDTH.toPx(), size.height)) }
+                        .padding(start = DAY_LINE_WIDTH + 8.dp),
                 ) {
-                    val shared = CommonDishes.leadingCount(menu.meals)
-                    if (shared > 0) SharedDishes(menu.meals[0].dishes.take(shared), state.allergens)
-                    menu.meals.forEach { meal ->
-                        MealCard(
-                            day = day,
-                            meal = meal,
-                            busy = state.busy.contains(MealKey(day, meal.course, meal.label)),
-                            offline = state.offline,
-                            allergens = state.allergens,
-                            allergenNames = state.allergenNames,
-                            onAction = onAction,
-                            onNote = onNote,
-                            onExchangePut = onExchangePut,
-                            onExchangeWithdraw = onExchangeWithdraw,
-                            hiddenDishes = shared,
-                        )
+                    Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val shared = CommonDishes.leadingCount(menu.meals)
+                        if (shared > 0) SharedDishes(menu.meals[0].dishes.take(shared), state.allergens)
+                        menu.meals.forEach { meal ->
+                            MealCard(
+                                day = day,
+                                meal = meal,
+                                busy = state.busy.contains(MealKey(day, meal.course, meal.label)),
+                                offline = state.offline,
+                                allergens = state.allergens,
+                                allergenNames = state.allergenNames,
+                                onAction = onAction,
+                                onNote = onNote,
+                                onExchangePut = onExchangePut,
+                                onExchangeWithdraw = onExchangeWithdraw,
+                                hiddenDishes = shared,
+                            )
+                        }
                     }
                 }
             }
@@ -436,7 +439,7 @@ private fun DaySection(
     }
 }
 
-private val DAY_EDGE_WIDTH = 4.dp
+private val DAY_LINE_WIDTH = 3.dp
 
 /** What all of a day's meals start with, written once above the cards. */
 @Composable
