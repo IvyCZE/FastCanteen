@@ -5,11 +5,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -21,6 +23,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -41,6 +44,8 @@ import yt.ivy.librecanteen.core.model.Money
 import yt.ivy.librecanteen.data.AppSettings
 import yt.ivy.librecanteen.data.CanteenRepository
 import yt.ivy.librecanteen.reminders.Reminders
+import yt.ivy.librecanteen.ui.components.LocalTopBarRefresh
+import yt.ivy.librecanteen.ui.components.TopBarRefreshState
 import yt.ivy.librecanteen.ui.history.HistoryScreen
 import yt.ivy.librecanteen.ui.history.HistoryViewModel
 import yt.ivy.librecanteen.ui.lock.AppLock
@@ -110,78 +115,93 @@ private fun MainScaffold(repository: CanteenRepository, settings: AppSettings, l
     }
 
     val credit by repository.credit.collectAsStateWithLifecycle()
+    val refresh = remember { TopBarRefreshState() }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        snackbarHost = { SnackbarHost(snackbar) },
-        topBar = { AppTopBar(credit) { showSettings = true } },
-        bottomBar = {
-            NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
-                Tab.entries.forEach { tab ->
-                    NavigationBarItem(
-                        selected = selected == tab.ordinal,
-                        onClick = { selected = tab.ordinal },
-                        icon = { Icon(tab.icon(), contentDescription = null) },
-                        label = { Text(stringResource(tab.label)) },
-                    )
+    CompositionLocalProvider(LocalTopBarRefresh provides refresh) {
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            snackbarHost = { SnackbarHost(snackbar) },
+            topBar = { AppTopBar(credit, refresh) { showSettings = true } },
+            bottomBar = {
+                NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+                    Tab.entries.forEach { tab ->
+                        NavigationBarItem(
+                            selected = selected == tab.ordinal,
+                            onClick = { selected = tab.ordinal },
+                            icon = { Icon(tab.icon(), contentDescription = null) },
+                            label = { Text(stringResource(tab.label)) },
+                        )
+                    }
                 }
-            }
-        },
-    ) { padding ->
-        Box(Modifier.padding(padding)) {
-            when (Tab.entries[selected]) {
-                Tab.Info -> {
-                    val state by historyVm.state.collectAsStateWithLifecycle()
-                    HistoryScreen(state, historyVm::load)
-                }
-                Tab.Burza -> {
-                    val state by exchangeVm.state.collectAsStateWithLifecycle()
-                    ExchangeScreen(
-                        state = state,
-                        events = exchangeVm.eventFlow,
-                        snackbar = snackbar,
-                        onRefresh = exchangeVm::load,
-                        onTake = exchangeVm::take,
-                        onWithdraw = exchangeVm::withdraw,
-                    )
-                }
-                Tab.Lunch -> {
-                    val state by lunchVm.state.collectAsStateWithLifecycle()
-                    val mode by settings.calendarMode.collectAsStateWithLifecycle()
-                    LunchScreen(
-                        state = state,
-                        mode = mode,
-                        events = lunchVm.eventFlow,
-                        snackbar = snackbar,
-                        onRefresh = { lunchVm.load(forceAll = true) },
-                        onPrevious = lunchVm::previous,
-                        onNext = lunchVm::next,
-                        onPreviousMonth = lunchVm::previousMonth,
-                        onNextMonth = lunchVm::nextMonth,
-                        onSelect = lunchVm::select,
-                        onPickMonth = lunchVm::pickMonth,
-                        onInitialScroll = lunchVm::consumeInitialScroll,
-                        onToggleMode = lunchVm::toggleMode,
-                        onAction = lunchVm::apply,
-                        onNote = lunchVm::saveNote,
-                        onExchangePut = lunchVm::putIntoExchange,
-                        onExchangeWithdraw = lunchVm::withdrawFromExchange,
-                    )
+            },
+        ) { padding ->
+            Box(Modifier.padding(padding)) {
+                when (Tab.entries[selected]) {
+                    Tab.Info -> {
+                        val state by historyVm.state.collectAsStateWithLifecycle()
+                        HistoryScreen(state, historyVm::load)
+                    }
+                    Tab.Burza -> {
+                        val state by exchangeVm.state.collectAsStateWithLifecycle()
+                        ExchangeScreen(
+                            state = state,
+                            events = exchangeVm.eventFlow,
+                            snackbar = snackbar,
+                            onRefresh = exchangeVm::load,
+                            onTake = exchangeVm::take,
+                            onWithdraw = exchangeVm::withdraw,
+                        )
+                    }
+                    Tab.Lunch -> {
+                        val state by lunchVm.state.collectAsStateWithLifecycle()
+                        val mode by settings.calendarMode.collectAsStateWithLifecycle()
+                        LunchScreen(
+                            state = state,
+                            mode = mode,
+                            events = lunchVm.eventFlow,
+                            snackbar = snackbar,
+                            onRefresh = { lunchVm.load(forceAll = true) },
+                            onPrevious = lunchVm::previous,
+                            onNext = lunchVm::next,
+                            onPreviousMonth = lunchVm::previousMonth,
+                            onNextMonth = lunchVm::nextMonth,
+                            onSelect = lunchVm::select,
+                            onPickMonth = lunchVm::pickMonth,
+                            onInitialScroll = lunchVm::consumeInitialScroll,
+                            onToggleMode = lunchVm::toggleMode,
+                            onAction = lunchVm::apply,
+                            onNote = lunchVm::saveNote,
+                            onExchangePut = lunchVm::putIntoExchange,
+                            onExchangeWithdraw = lunchVm::withdrawFromExchange,
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-/** One row: the app name, the credit, and the settings button. The username lives in settings. */
+/**
+ * One row: the app name, the refresh spinner, the credit, and the settings button. The username lives
+ * in settings. The spinner follows the finger while pulling and spins while loading.
+ */
 @Composable
-private fun AppTopBar(credit: Money?, onSettings: () -> Unit) {
+private fun AppTopBar(credit: Money?, refresh: TopBarRefreshState, onSettings: () -> Unit) {
     Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
         Row(
             Modifier.statusBarsPadding().fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
         ) {
             Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+            if (refresh.refreshing) {
+                CircularProgressIndicator(Modifier.padding(end = 12.dp).size(20.dp), strokeWidth = 2.dp)
+            } else if (refresh.pull > 0f) {
+                CircularProgressIndicator(
+                    progress = { refresh.pull.coerceIn(0f, 1f) },
+                    modifier = Modifier.padding(end = 12.dp).size(20.dp),
+                    strokeWidth = 2.dp,
+                )
+            }
             if (credit != null) {
                 Text(
                     formatMoney(credit),

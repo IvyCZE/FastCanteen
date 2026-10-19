@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -39,6 +40,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -52,6 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -66,6 +69,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -139,104 +143,130 @@ fun LoginScreen(
 
     BackHandler(enabled = step == STEP_FORM) { step = STEP_WELCOME }
 
+    LightStatusBarIcons(step == STEP_FORM)
+
     Surface(color = page, contentColor = ink, modifier = Modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxSize().safeDrawingPadding().imePadding()) {
-            Column(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .widthIn(max = 480.dp)
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = PageEdge)
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                if (step == STEP_WELCOME) {
-                    Image(painterResource(R.drawable.ic_logo), contentDescription = null, modifier = Modifier.size(220.dp))
-                    Spacer(Modifier.height(24.dp))
-                    Text(stringResource(R.string.app_name), style = MaterialTheme.typography.displaySmall)
-                    Spacer(Modifier.height(8.dp))
-                    Text(stringResource(R.string.login_tagline), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
-                    Spacer(Modifier.height(32.dp))
-                    Button(
-                        onClick = { step = STEP_FORM },
-                        shape = FieldShape,
-                        colors = ButtonDefaults.buttonColors(containerColor = ink, contentColor = page),
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                    ) {
-                        Text(stringResource(R.string.login_button), style = MaterialTheme.typography.titleMedium)
-                    }
-                } else {
-                    CompositionLocalProvider(LocalContentColor provides PanelInk) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth().clip(PanelShape).background(PanelColor).padding(24.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+        Box(Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxSize().safeDrawingPadding().imePadding()) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .widthIn(max = 480.dp)
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = PageEdge)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    if (step == STEP_WELCOME) {
+                        Image(painterResource(R.drawable.ic_logo), contentDescription = null, modifier = Modifier.size(220.dp))
+                        Spacer(Modifier.height(24.dp))
+                        Text(stringResource(R.string.app_name), style = MaterialTheme.typography.displaySmall)
+                        Spacer(Modifier.height(8.dp))
+                        Text(stringResource(R.string.login_tagline), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+                        Spacer(Modifier.height(32.dp))
+                        Button(
+                            onClick = { step = STEP_FORM },
+                            shape = FieldShape,
+                            colors = ButtonDefaults.buttonColors(containerColor = ink, contentColor = page),
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
                         ) {
-                            Text(stringResource(R.string.login_url_title), style = MaterialTheme.typography.titleLarge)
-                            Text(stringResource(R.string.login_url_text), style = MaterialTheme.typography.bodyMedium)
-                            LoginTextField(
-                                value = address,
-                                onValueChange = { address = it },
-                                placeholder = stringResource(R.string.login_address_hint),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next),
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Text(stringResource(R.string.login_username), style = MaterialTheme.typography.titleLarge)
-                            LoginTextField(
-                                value = username,
-                                onValueChange = { username = it },
-                                placeholder = stringResource(R.string.login_username_hint),
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Text(stringResource(R.string.login_password), style = MaterialTheme.typography.titleLarge)
-                            LoginTextField(
-                                value = password,
-                                onValueChange = { password = it },
-                                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                                keyboardActions = KeyboardActions(onDone = { submit() }),
-                                trailing = {
-                                    if (state.loading) {
-                                        CircularProgressIndicator(Modifier.padding(end = 12.dp).size(24.dp), color = PanelInk, strokeWidth = 2.dp)
-                                    } else {
-                                        ArrowButton(stringResource(R.string.login_button), canSubmit) { submit() }
-                                    }
-                                },
-                            )
-                            Text(
-                                stringResource(if (showPassword) R.string.hide_password else R.string.show_password),
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier
-                                    .align(Alignment.End)
-                                    .clip(MaterialTheme.shapes.extraSmall)
-                                    .clickable(role = Role.Switch) { showPassword = !showPassword }
-                                    .padding(horizontal = 4.dp, vertical = 6.dp),
-                            )
-                            state.error?.let { Text(it.asString(), color = PanelError, style = MaterialTheme.typography.bodyMedium) }
+                            Text(stringResource(R.string.login_button), style = MaterialTheme.typography.titleMedium)
+                        }
+                    } else {
+                        CompositionLocalProvider(LocalContentColor provides PanelInk) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth().clip(PanelShape).background(PanelColor).padding(24.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Text(stringResource(R.string.login_url_title), style = MaterialTheme.typography.titleLarge)
+                                Text(stringResource(R.string.login_url_text), style = MaterialTheme.typography.bodyMedium)
+                                LoginTextField(
+                                    value = address,
+                                    onValueChange = { address = it },
+                                    placeholder = stringResource(R.string.login_address_hint),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next),
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(stringResource(R.string.login_username), style = MaterialTheme.typography.titleLarge)
+                                LoginTextField(
+                                    value = username,
+                                    onValueChange = { username = it },
+                                    placeholder = stringResource(R.string.login_username_hint),
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(stringResource(R.string.login_password), style = MaterialTheme.typography.titleLarge)
+                                LoginTextField(
+                                    value = password,
+                                    onValueChange = { password = it },
+                                    visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                                    keyboardActions = KeyboardActions(onDone = { submit() }),
+                                    trailing = {
+                                        if (state.loading) {
+                                            CircularProgressIndicator(Modifier.padding(end = 12.dp).size(24.dp), color = PanelInk, strokeWidth = 2.dp)
+                                        } else {
+                                            ArrowButton(stringResource(R.string.login_button), canSubmit) { submit() }
+                                        }
+                                    },
+                                )
+                                Text(
+                                    stringResource(if (showPassword) R.string.hide_password else R.string.show_password),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier
+                                        .align(Alignment.End)
+                                        .clip(MaterialTheme.shapes.extraSmall)
+                                        .clickable(role = Role.Switch) { showPassword = !showPassword }
+                                        .padding(horizontal = 4.dp, vertical = 6.dp),
+                                )
+                                state.error?.let { Text(it.asString(), color = PanelError, style = MaterialTheme.typography.bodyMedium) }
+                            }
                         }
                     }
                 }
-            }
 
+                LoginFooter(onLanguage, Modifier.align(Alignment.BottomCenter))
+            }
             if (step == STEP_FORM) {
+                // Fills the width and the status bar area, in the panel color so it reads lighter than the dark page.
                 Row(
-                    Modifier.align(Alignment.TopCenter).widthIn(max = 480.dp).fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
+                    Modifier.align(Alignment.TopCenter).fillMaxWidth().background(PanelColor).statusBarsPadding()
+                        .padding(start = 24.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineLarge, modifier = Modifier.weight(1f))
+                    Text(
+                        stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = PanelInk,
+                        modifier = Modifier.weight(1f),
+                    )
                     IconButton(onClick = { step = STEP_WELCOME }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.back),
-                            tint = ink,
+                            tint = PanelInk,
                             modifier = Modifier.size(32.dp),
                         )
                     }
                 }
             }
-
-            LoginFooter(onLanguage, Modifier.align(Alignment.BottomCenter))
         }
+    }
+}
+
+/** The top bar is dark in every theme, so the status bar icons must be light while it is shown. */
+@Composable
+private fun LightStatusBarIcons(enabled: Boolean) {
+    val view = LocalView.current
+    if (view.isInEditMode) return
+    DisposableEffect(enabled) {
+        var context = view.context
+        while (context is android.content.ContextWrapper && context !is android.app.Activity) context = context.baseContext
+        val window = (context as? android.app.Activity)?.window ?: return@DisposableEffect onDispose {}
+        val controller = WindowCompat.getInsetsController(window, view)
+        val previous = controller.isAppearanceLightStatusBars
+        if (enabled) controller.isAppearanceLightStatusBars = false
+        onDispose { controller.isAppearanceLightStatusBars = previous }
     }
 }
 

@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -22,7 +24,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,6 +43,7 @@ import yt.ivy.librecanteen.core.model.ExchangeOffer
 import yt.ivy.librecanteen.core.model.exchangedQuantity
 import yt.ivy.librecanteen.core.model.Money
 import yt.ivy.librecanteen.ui.UiText
+import yt.ivy.librecanteen.ui.components.TopBarPullToRefresh
 import yt.ivy.librecanteen.ui.asString
 import yt.ivy.librecanteen.ui.formatDayHeader
 import yt.ivy.librecanteen.ui.formatMoney
@@ -70,22 +72,23 @@ fun ExchangeScreen(
         }
     }
 
-    PullToRefreshBox(isRefreshing = state.loading, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
+    TopBarPullToRefresh(isRefreshing = state.loading, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
         val offers = state.offers
         val error = state.error
         when {
             error != null && offers == null && state.mine.isEmpty() -> Column(
-                Modifier.fillMaxSize().padding(24.dp),
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(error.asString(), style = MaterialTheme.typography.bodyMedium)
                 TextButton(onClick = onRefresh) { Text(stringResource(R.string.retry)) }
             }
-            offers == null && state.mine.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-            offers.isNullOrEmpty() && state.mine.isEmpty() -> Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+            offers == null && state.mine.isEmpty() -> Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()))
+            offers.isNullOrEmpty() && state.mine.isEmpty() -> Box(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+                contentAlignment = Alignment.Center,
+            ) {
                 Text(
                     stringResource(R.string.exchange_empty),
                     style = MaterialTheme.typography.bodyMedium,

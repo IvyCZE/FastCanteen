@@ -21,11 +21,13 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -57,7 +59,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -102,6 +103,7 @@ import yt.ivy.librecanteen.data.CalendarMode
 import yt.ivy.librecanteen.ui.UiText
 import yt.ivy.librecanteen.ui.asString
 import yt.ivy.librecanteen.ui.components.DateBar
+import yt.ivy.librecanteen.ui.components.TopBarPullToRefresh
 import yt.ivy.librecanteen.ui.components.horizontalSwipe
 import yt.ivy.librecanteen.ui.formatDayHeader
 import yt.ivy.librecanteen.ui.formatDeadline
@@ -173,11 +175,11 @@ fun LunchScreen(
                     .padding(horizontal = 16.dp, vertical = 6.dp),
             )
         }
-        PullToRefreshBox(isRefreshing = state.loading, onRefresh = onRefresh, modifier = Modifier.weight(1f).fillMaxWidth()) {
+        TopBarPullToRefresh(isRefreshing = state.loading, onRefresh = onRefresh, modifier = Modifier.weight(1f).fillMaxWidth()) {
             val error = state.error
             if (error != null && state.days.isEmpty()) {
                 Column(
-                    Modifier.fillMaxSize().padding(24.dp),
+                    Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {

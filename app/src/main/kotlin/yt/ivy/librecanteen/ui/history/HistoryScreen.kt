@@ -9,13 +9,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -43,6 +44,7 @@ import yt.ivy.librecanteen.core.model.Payment
 import yt.ivy.librecanteen.data.CanteenRepository
 import yt.ivy.librecanteen.ui.UiText
 import yt.ivy.librecanteen.ui.components.DateBar
+import yt.ivy.librecanteen.ui.components.TopBarPullToRefresh
 import yt.ivy.librecanteen.ui.lunch.formatMonth
 import yt.ivy.librecanteen.ui.asString
 import yt.ivy.librecanteen.ui.formatMoney
@@ -97,10 +99,10 @@ fun HistoryScreen(state: HistoryState, onRefresh: () -> Unit) {
             Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text(stringResource(R.string.history_orders)) })
             Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text(stringResource(R.string.history_payments)) })
         }
-        PullToRefreshBox(isRefreshing = state.loading, onRefresh = onRefresh, modifier = Modifier.weight(1f).fillMaxWidth()) {
+        TopBarPullToRefresh(isRefreshing = state.loading, onRefresh = onRefresh, modifier = Modifier.weight(1f).fillMaxWidth()) {
             val failed = state.error
             if (failed != null && state.orders == null && state.payments == null) {
-                Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(failed.asString())
                     TextButton(onClick = onRefresh) { Text(stringResource(R.string.retry)) }
                 }
@@ -126,7 +128,7 @@ private fun Empty() {
         stringResource(R.string.history_empty),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(24.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
     )
 }
 

@@ -110,7 +110,10 @@ iCanteen has no JSON API. It is server-rendered JSF/JSP. Facts learned by readin
 
 ### Navigation
 Bottom bar: **Info** (order history and payments), **Lunch** (menu), **Burza** (exchange).
-The top bar is one line with the user's credit. Settings are split into category pages: Customization,
+The top bar is one line with the user's credit. Pull-to-refresh (all three tabs) draws no indicator over the
+content: a 20 dp spinner appears in the top bar before the credit, an arc that follows the finger while pulling
+and a spinning one while loading (`ui/components/PullRefresh.kt`, `TopBarPullToRefresh` reports through
+`LocalTopBarRefresh`). Settings are split into category pages: Customization,
 Language, Account and security (including app lock), Allergens, Notifications, About. Back returns to the list first.
 
 ### Lunch
@@ -133,7 +136,8 @@ Language, Account and security (including app lock), Allergens, Notifications, A
 ### Burza
 Sections "Offered by you" (found by scanning menus from today for 7 days, hidden when empty) and "Offers by
 others". Cards show the day ("Weekday, d. m."), dishes, pickup point, pieces and a filled 36 dp button; taking
-asks for confirmation with the price.
+asks for confirmation with the price. Pull down to refresh works in every state: the empty, error and first
+loading states are scrollable (a gesture needs something to scroll); the first load shows the top bar spinner.
 
 ### Settings and storage
 Allergen edits autosave 1.5 s after the last tick (`DebouncedSaver`, one request per batch), flush on leaving
@@ -154,8 +158,9 @@ on white and white on dark gray; system bar icons follow the theme.
    the whole page. The fields are a step darker (`#141312`), so they show as boxes on the panel.
    The arrow in the password field signs in (a spinner while working); a small text link shows or hides the
    password; errors appear under the fields.
-The form has the app name with a back arrow on the right (as in the author's mockup); system Back returns to
-the welcome step. The step, address and username survive a recreate, the password does not.
+The form has an app bar with the app name and a back arrow on the right (as in the author's mockup). The bar
+is the lighter panel color (`#1c1b1a`) across the full width and under the status bar, so the status bar icons
+are forced light while it is shown (restored afterwards). System Back returns to the welcome step. The step, address and username survive a recreate, the password does not.
 Footer on both steps: "Created by ivy.yt" (underlined link to the author's site), "Privacy Policy" (link to
 the project's privacy policy page), and the text "Czech / English". The active language is underlined; a tap on it
 switches the app language. "Privacy Policy" and the two language names are not
@@ -249,6 +254,9 @@ Priority is not confirmed by the user; the assistant's suggestion is first.
 ## 9. Open items and unverified things
 
 - Reminders (`ReminderWorker`) have not been tested by the user yet.
+- Top bar refresh spinner (arc while pulling, spinning while loading, no overlay), pull-to-refresh on empty
+  or failed Burza, Info and Lunch screens, and the lighter login app bar with light status bar icons in the
+  light theme: built without a device.
 - Login fields (`#141312`) on the `#1c1b1a` panel: check on the phone that they read as input fields.
 - Sign-in flow, logo, school and language icon paths, launcher icon and its themed (monochrome) version were
   built without a device. Check the two steps on the phone (panel centered on the page, panel scrolling with
@@ -280,6 +288,19 @@ Also update sections 5, 6, 8 and 9 above when they stop being true, and the READ
 visible behavior changes.
 
 ## Log
+
+### 2026-10-19, refresh spinner in the top bar, lighter login app bar
+- The pull-to-refresh indicator overlapped the content. `PullToRefreshBox` is kept for the gesture but its
+  indicator is empty; `TopBarPullToRefresh` hands `isRefreshing` and the pull fraction to the top bar, which
+  shows a small spinner before the credit (also while the finger is still pulling).
+- Burza already had `PullToRefreshBox`, but its empty, error and first-load states did not scroll, so the
+  gesture never started there. They are scrollable now (also in Info and Lunch error/empty states). The
+  centered first-load spinner in Burza was removed; the top bar spinner replaces it.
+- The login form step has a full-width app bar in `#1c1b1a` (lighter than the `#141312` page) that covers the
+  status bar area. Interpretation of "lighter color": the lighter of the two grays. Status bar icons are light
+  while it is shown, because the bar is dark in the light theme too.
+- Verified: `:core:test`, `:app:testDebugUnitTest`, `:app:lintDebug` (13 warnings, only `UseKtx` and
+  `UseTomlInstead`), `:app:assembleDebug`. Not seen on a device.
 
 ### 2026-10-19, darker login fields
 - The login fields are `#141312`, a step darker than the `#1c1b1a` panel, because they blended into it.
