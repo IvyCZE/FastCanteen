@@ -69,6 +69,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -247,25 +248,35 @@ private fun MonthCalendar(
             Text(formatMonth(state.month), style = MaterialTheme.typography.titleMedium)
             Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
         }
-        Row(Modifier.fillMaxWidth()) {
-            DayOfWeek.entries.forEach { dow ->
-                Text(
-                    dow.getDisplayName(TextStyle.SHORT, Locale.getDefault()).replaceFirstChar { it.titlecase(Locale.getDefault()) },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-        LunchNav.monthCells(state.month).chunked(7).forEach { week ->
+        val lineColor = MaterialTheme.colorScheme.outlineVariant
+        val weeks = LunchNav.monthCells(state.month).chunked(7)
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.medium)
+                .border(1.dp, lineColor, MaterialTheme.shapes.medium),
+        ) {
             Row(Modifier.fillMaxWidth()) {
-                week.forEach { day ->
-                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        if (day != null) {
-                            DayCircle(day, state.days[day], selected = day == state.anchor, today = day == today, onSelect)
-                        } else {
-                            Spacer(Modifier.size(CIRCLE_SIZE))
+                DayOfWeek.entries.forEachIndexed { column, dow ->
+                    Box(Modifier.weight(1f).height(28.dp).gridLines(lineColor, right = column < 6, bottom = true), contentAlignment = Alignment.Center) {
+                        Text(
+                            dow.getDisplayName(TextStyle.SHORT, Locale.getDefault()).replaceFirstChar { it.titlecase(Locale.getDefault()) },
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+            weeks.forEachIndexed { row, week ->
+                Row(Modifier.fillMaxWidth()) {
+                    week.forEachIndexed { column, day ->
+                        Box(
+                            Modifier.weight(1f).height(CIRCLE_SIZE + 8.dp).gridLines(lineColor, right = column < 6, bottom = row < weeks.lastIndex),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (day != null) {
+                                DayCircle(day, state.days[day], selected = day == state.anchor, today = day == today, onSelect)
+                            }
                         }
                     }
                 }
@@ -281,6 +292,13 @@ private fun MonthCalendar(
 }
 
 private val CIRCLE_SIZE = 40.dp
+
+/** Thin lines on the right and bottom edge of a calendar cell; together with the outer border they form the grid. */
+private fun Modifier.gridLines(color: Color, right: Boolean, bottom: Boolean): Modifier = drawBehind {
+    val stroke = 1.dp.toPx()
+    if (right) drawLine(color, Offset(size.width - stroke / 2, 0f), Offset(size.width - stroke / 2, size.height), stroke)
+    if (bottom) drawLine(color, Offset(0f, size.height - stroke / 2), Offset(size.width, size.height - stroke / 2), stroke)
+}
 
 @Composable
 private fun DayCircle(day: LocalDate, menu: DayMenu?, selected: Boolean, today: Boolean, onSelect: (LocalDate) -> Unit) {

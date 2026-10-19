@@ -7,15 +7,16 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -114,7 +115,6 @@ private fun OfferList(
             item(key = "mine-heading") { SectionHeading(R.string.exchange_section_mine) }
             items(state.mine, key = { "mine-${it.day}-${it.meal.label}" }) { own ->
                 ExchangeCard(
-                    label = own.meal.label,
                     date = own.day,
                     price = own.meal.price,
                     dishes = own.meal.dishes,
@@ -141,7 +141,6 @@ private fun OfferList(
         }
         items(offers, key = { it.path }) { offer ->
             ExchangeCard(
-                label = offer.label,
                 date = offer.date,
                 price = state.prices[OfferKey(offer.date, offer.label)],
                 dishes = offer.dishes,
@@ -187,7 +186,6 @@ private fun SectionHeading(title: Int) {
 
 @Composable
 private fun ExchangeCard(
-    label: String,
     date: LocalDate,
     price: Money?,
     dishes: List<Dish>,
@@ -206,27 +204,33 @@ private fun ExchangeCard(
     ) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(label, style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        formatDayHeader(date),
-                        style = MaterialTheme.typography.bodySmall.merge(NumericStyle),
-                        color = if (outlined) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                Text(
+                    formatDayHeader(date),
+                    style = MaterialTheme.typography.titleMedium.merge(NumericStyle),
+                    modifier = Modifier.weight(1f),
+                )
                 price?.let { Text(formatMoney(it), style = MaterialTheme.typography.titleMedium.merge(NumericStyle)) }
             }
             dishes.forEach { DishLine(it, allergens) }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(detail, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-                val padding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
-                val content: @Composable () -> Unit = {
-                    if (busy) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp) else Text(stringResource(actionLabel))
-                }
-                if (outlined) {
-                    OutlinedButton(onClick = onAction, enabled = enabled, contentPadding = padding) { content() }
+                // Own offers sit on the tinted card, so their button uses the inverted colors.
+                val colors = if (outlined) {
+                    ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        contentColor = MaterialTheme.colorScheme.primaryContainer,
+                    )
                 } else {
-                    Button(onClick = onAction, enabled = enabled, contentPadding = padding) { content() }
+                    ButtonDefaults.buttonColors()
+                }
+                Button(
+                    onClick = onAction,
+                    enabled = enabled,
+                    colors = colors,
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+                    modifier = Modifier.height(36.dp),
+                ) {
+                    if (busy) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp) else Text(stringResource(actionLabel))
                 }
             }
         }
