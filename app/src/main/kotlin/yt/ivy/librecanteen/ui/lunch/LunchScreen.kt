@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -406,15 +407,19 @@ private fun DaySection(
             )
             else -> {
                 val line = MaterialTheme.colorScheme.primary
-                // Drawn rather than laid out: the title text measures itself, which rules out intrinsic sizes.
+                val corners = MaterialTheme.shapes.extraLarge
                 Surface(
-                    shape = MaterialTheme.shapes.extraLarge,
+                    // The marked left edge is rounded half as much as the right one.
+                    shape = corners.copy(topStart = CornerSize(10.dp), bottomStart = CornerSize(10.dp)),
                     color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    modifier = Modifier
-                        .drawBehind { drawRect(line, size = Size(DAY_LINE_WIDTH.toPx(), size.height)) }
-                        .padding(start = DAY_LINE_WIDTH + 8.dp),
                 ) {
-                    Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(
+                        // The surface clips the line to its corners, so it is the container's left border.
+                        Modifier
+                            .drawBehind { drawRect(line, size = Size(DAY_LINE_WIDTH.toPx(), size.height)) }
+                            .padding(start = DAY_LINE_WIDTH + 8.dp, top = 8.dp, end = 8.dp, bottom = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
                         val shared = CommonDishes.leadingCount(menu.meals)
                         if (shared > 0) SharedDishes(menu.meals[0].dishes.take(shared), state.allergens)
                         menu.meals.forEach { meal ->
