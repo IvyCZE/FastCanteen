@@ -26,6 +26,7 @@
     <string name="error_address">Adresa jídelny není platná. Povolené jsou jen adresy s https.</string>
     <string name="error_session">Přihlášení vypršelo. Přihlas se znovu.</string>
     <string name="error_generic">Něco se nepovedlo.</string>
+    <string name="error_changed_meanwhile">Nabídka se mezitím změnila, nic se neodeslalo. Zkontroluj aktuální stav.</string>
     <string name="error_not_applied">Jídelna změnu nepřijala. Zkus to znovu.</string>
     <string name="error_partial">Část dní se nepodařilo načíst.</string>
     <string name="retry">Zkusit znovu</string>

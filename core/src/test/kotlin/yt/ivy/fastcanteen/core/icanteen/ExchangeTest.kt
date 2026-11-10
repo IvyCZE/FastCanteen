@@ -70,11 +70,13 @@ class ExchangeTest {
     fun `taking a meal calls the signed operation and confirms the new order on the day`() = runTest {
         val offer = loadOffer()
         server.enqueue(ok(fixture("day_closed.html")))
+        server.enqueue(ok(fixture("burza_with_meal.html")))
         server.enqueue(ok("<html>main page</html>"))
         server.enqueue(ok(fixture("day_ordered_burza_offer.html")))
 
         val updated = client.takeFromExchange(offer)
 
+        server.takeRequest()
         server.takeRequest()
         val operation = server.takeRequest().requestLine
         assertTrue(operation.startsWith("GET /faces/secured/db/dbProcessOrder.jsp?") && "type=getburza" in operation, operation)
@@ -85,20 +87,48 @@ class ExchangeTest {
     fun `a refusal from the canteen is reported with its wording`() = runTest {
         val offer = loadOffer()
         server.enqueue(ok(fixture("day_closed.html")))
+        server.enqueue(ok(fixture("burza_with_meal.html")))
         server.enqueue(ok(fixture("synthetic_order_error.html")))
 
         assertFailsWith<CanteenException.OrderRejected> { client.takeFromExchange(offer) }
-        assertEquals(2, server.requestCount - 1)
+        assertEquals(3, server.requestCount - 1)
     }
 
     @Test
     fun `a take that leaves the order unchanged is not reported as success`() = runTest {
         val offer = loadOffer()
         server.enqueue(ok(fixture("day_closed.html")))
+        server.enqueue(ok(fixture("burza_with_meal.html")))
         server.enqueue(ok("<html>main page</html>"))
         server.enqueue(ok(fixture("day_closed.html")))
 
         assertFailsWith<CanteenException.OrderNotApplied> { client.takeFromExchange(offer) }
+    }
+
+    @Test
+    fun `a take is sent with the link of the exchange page read just before it`() = runTest {
+        val offer = loadOffer()
+        server.enqueue(ok(fixture("day_closed.html")))
+        server.enqueue(ok(fixture("burza_with_meal.html").replace("token=TOKEN", "token=FRESH")))
+        server.enqueue(ok("<html>main page</html>"))
+        server.enqueue(ok(fixture("day_ordered_burza_offer.html")))
+
+        client.takeFromExchange(offer)
+
+        server.takeRequest()
+        server.takeRequest()
+        val operation = server.takeRequest().requestLine
+        assertTrue("token=FRESH" in operation && "token=TOKEN" !in operation, operation)
+    }
+
+    @Test
+    fun `an offer that is gone from the exchange is not taken and nothing is sent`() = runTest {
+        val offer = loadOffer()
+        server.enqueue(ok(fixture("day_closed.html")))
+        server.enqueue(ok(fixture("burza_empty.html")))
+
+        assertFailsWith<CanteenException.ChangedMeanwhile> { client.takeFromExchange(offer) }
+        assertEquals(3, server.requestCount)
     }
 
     @Test
@@ -159,11 +189,13 @@ class OwnExchangeTest {
     @Test
     fun `putting a meal into the exchange is confirmed by the day`() = runTest {
         val meal = load("day_ordered_burza_offer.html")
+        server.enqueue(ok(fixture("day_ordered_burza_offer.html")))
         server.enqueue(ok(fixture("synthetic_order_ok.html")))
         server.enqueue(ok(fixture("day_ordered_in_exchange.html")))
 
         val updated = client.putIntoExchange(day, meal, 1)
 
+        server.takeRequest()
         val operation = server.takeRequest().requestLine
         assertTrue("type=multiburza&amount=1&" in operation, operation)
         assertEquals(1, updated.meals[0].exchangedQuantity)
@@ -172,6 +204,7 @@ class OwnExchangeTest {
     @Test
     fun `a put that leaves the day unchanged is not reported as success`() = runTest {
         val meal = load("day_ordered_burza_offer.html")
+        server.enqueue(ok(fixture("day_ordered_burza_offer.html")))
         server.enqueue(ok(fixture("synthetic_order_ok.html")))
         server.enqueue(ok(fixture("day_ordered_burza_offer.html")))
 
@@ -179,13 +212,38 @@ class OwnExchangeTest {
     }
 
     @Test
+    fun `a put is sent with the link of the day read just before it`() = runTest {
+        val meal = load("day_ordered_burza_offer.html")
+        server.enqueue(ok(fixture("day_ordered_burza_offer.html").replace("token=TOKEN", "token=FRESH")))
+        server.enqueue(ok(fixture("synthetic_order_ok.html")))
+        server.enqueue(ok(fixture("day_ordered_in_exchange.html")))
+
+        client.putIntoExchange(day, meal, 1)
+
+        server.takeRequest()
+        val operation = server.takeRequest().requestLine
+        assertTrue("token=FRESH" in operation && "token=TOKEN" !in operation, operation)
+    }
+
+    @Test
+    fun `a put for a meal that can no longer be offered sends nothing`() = runTest {
+        val meal = load("day_ordered_burza_offer.html")
+        server.enqueue(ok(fixture("day_ordered_in_exchange.html")))
+
+        assertFailsWith<CanteenException.ChangedMeanwhile> { client.putIntoExchange(day, meal, 1) }
+        assertEquals(2, server.requestCount)
+    }
+
+    @Test
     fun `withdrawing a meal is confirmed by the day`() = runTest {
         val meal = load("day_ordered_in_exchange.html")
+        server.enqueue(ok(fixture("day_ordered_in_exchange.html")))
         server.enqueue(ok(fixture("synthetic_order_ok.html")))
         server.enqueue(ok(fixture("day_ordered_burza_offer.html")))
 
         val updated = client.withdrawFromExchange(day, meal)
 
+        server.takeRequest()
         val operation = server.takeRequest().requestLine
         assertTrue("type=minusburza" in operation, operation)
         assertEquals(0, updated.meals[0].exchangedQuantity)
@@ -194,10 +252,11 @@ class OwnExchangeTest {
     @Test
     fun `a withdraw that was too late is reported and nothing else is sent`() = runTest {
         val meal = load("day_ordered_in_exchange.html")
+        server.enqueue(ok(fixture("day_ordered_in_exchange.html")))
         server.enqueue(ok(fixture("synthetic_order_error.html")))
 
         assertFailsWith<CanteenException.OrderRejected> { client.withdrawFromExchange(day, meal) }
-        assertEquals(2, server.requestCount)
+        assertEquals(3, server.requestCount)
     }
 
     @Test

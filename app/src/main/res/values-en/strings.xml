@@ -26,6 +26,7 @@
     <string name="error_address">The canteen address is not valid. Only https addresses are allowed.</string>
     <string name="error_session">Your session expired. Please sign in again.</string>
     <string name="error_generic">Something went wrong.</string>
+    <string name="error_changed_meanwhile">The offer changed in the meantime and nothing was sent. Check the current state.</string>
     <string name="error_not_applied">The canteen did not apply the change. Please try again.</string>
     <string name="error_partial">Some days could not be loaded.</string>
     <string name="retry">Try again</string>

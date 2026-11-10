@@ -42,11 +42,13 @@ class ICanteenClientMutationsTest {
     @Test
     fun `cancelling an order calls the signed operation and returns the refreshed day`() = runTest {
         val menu = loadDay()
+        server.enqueue(ok(fixture("day_ordered.html")))
         server.enqueue(ok(fixture("synthetic_order_ok.html")))
         server.enqueue(ok(fixture("day_closed.html").replace("2026-10-19", "2026-10-20")))
 
         val updated = client.order(day, menu.meals[0])
 
+        server.takeRequest()
         val operation = server.takeRequest().requestLine
         assertTrue(operation.startsWith("GET /faces/secured/db/dbProcessOrder.jsp?"), operation)
         assertTrue("type=delete" in operation, operation)
@@ -56,17 +58,57 @@ class ICanteenClientMutationsTest {
     @Test
     fun `a refused order is reported with the canteen's wording and the day is not reloaded`() = runTest {
         val menu = loadDay()
+        server.enqueue(ok(fixture("day_ordered.html")))
         server.enqueue(ok(fixture("synthetic_order_error.html")))
 
         val error = assertFailsWith<CanteenException.OrderRejected> { client.order(day, menu.meals[0]) }
 
         assertEquals("Objednávky jsou již uzavřeny.", error.reason)
+        assertEquals(3, server.requestCount)
+    }
+
+    @Test
+    fun `an order is sent with the link of the day read just before it`() = runTest {
+        val menu = loadDay()
+        server.enqueue(ok(fixture("day_ordered.html").replace("token=TOKEN", "token=FRESH")))
+        server.enqueue(ok(fixture("synthetic_order_ok.html")))
+        server.enqueue(ok(fixture("day_closed.html").replace("2026-10-19", "2026-10-20")))
+
+        client.order(day, menu.meals[0])
+
+        server.takeRequest()
+        val operation = server.takeRequest().requestLine
+        assertTrue("token=FRESH" in operation && "token=TOKEN" !in operation, operation)
+    }
+
+    @Test
+    fun `a meal that no longer offers the same change is not sent`() = runTest {
+        val menu = loadDay()
+        server.enqueue(ok(fixture("day_closed.html").replace("2026-10-19", "2026-10-20")))
+
+        assertFailsWith<CanteenException.ChangedMeanwhile> { client.order(day, menu.meals[0]) }
         assertEquals(2, server.requestCount)
+    }
+
+    @Test
+    fun `a note is sent with the link of the day read just before it`() = runTest {
+        val menu = loadDay()
+        val meal = menu.meals.first { it.noteAction != null }
+        server.enqueue(ok(fixture("day_ordered.html").replace("token=TOKEN", "token=FRESH")))
+        server.enqueue(ok(fixture("synthetic_order_ok.html")))
+        server.enqueue(ok(fixture("day_ordered.html").replace("placeholder=\"Zadejte poznámku k objednávce\" value=\"\"", "placeholder=\"Zadejte poznámku k objednávce\" value=\"x\"")))
+
+        client.setNote(day, meal, "x")
+
+        server.takeRequest()
+        val operation = server.takeRequest().requestLine
+        assertTrue("token=FRESH" in operation && "token=TOKEN" !in operation, operation)
     }
 
     @Test
     fun `an order that leaves the day unchanged is not reported as success`() = runTest {
         val menu = loadDay()
+        server.enqueue(ok(fixture("day_ordered.html")))
         server.enqueue(ok(fixture("synthetic_order_ok.html")))
         server.enqueue(ok(fixture("day_ordered.html")))
 

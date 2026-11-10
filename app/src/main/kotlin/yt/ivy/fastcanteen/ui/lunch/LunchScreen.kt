@@ -167,6 +167,16 @@ fun LunchScreen(
         }
     }
 
+    // Every other week opens at its Monday instead of keeping the scroll position of the previous one.
+    val weekStart = state.week.first()
+    var shownWeekStart by remember { mutableStateOf(weekStart) }
+    LaunchedEffect(weekStart) {
+        if (weekStart != shownWeekStart) {
+            shownWeekStart = weekStart
+            if (mode == CalendarMode.WEEK) listState.scrollToItem(0)
+        }
+    }
+
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val twoPane = mode == CalendarMode.MONTH && maxWidth >= TWO_PANE_MIN_WIDTH
         Column(Modifier.fillMaxSize()) {

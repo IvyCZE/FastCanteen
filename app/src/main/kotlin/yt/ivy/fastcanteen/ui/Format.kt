@@ -30,6 +30,7 @@ fun Throwable.toUiText(): UiText = when (this) {
     is CanteenException.Network -> UiText.Res(R.string.error_network)
     is CanteenException.UnsupportedLayout -> UiText.Res(R.string.error_layout)
     is CanteenException.OrderNotApplied -> UiText.Res(R.string.error_not_applied)
+    is CanteenException.ChangedMeanwhile -> UiText.Res(R.string.error_changed_meanwhile)
     is CanteenException.OrderRejected -> UiText.Raw(reason)
     is CanteenException.PasswordChangeRejected -> UiText.Raw(reason)
     is IllegalArgumentException -> UiText.Res(R.string.error_address)

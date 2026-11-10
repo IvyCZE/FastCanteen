@@ -82,6 +82,10 @@ iCanteen has no JSON API. It is server-rendered JSF/JSP. Facts learned by readin
   burza page with the pickup point; redirects to `main.jsp`), `multiburza` (put an ordered, locked meal
   into the exchange, with `amount`), `minusburza` (withdraw it).
   Success bodies contain the credit block (`#kreditInclude`); errors are JSON `{"message": …}`.
+  Some canteens (not the author's) honor only the **most recently loaded page's** `time`/`token` and answer
+  an older link with a message that several browser windows are open. The week view loads seven days at
+  once, so every link except the last day's is stale. Hence every change is built from a day (or burza page)
+  read right before it, see section 4.
 - **Issued meals** have no state of their own. The day page shows them as `ORDERED_LOCKED` with the reason
   "Objednávka je již vydaná." (`Meal.issued` matches that text). Other locked orders keep their reason.
 - **Burza page:** `faces/secured/burza.jsp`. Table rows: variant, date, description, pickup point, count,
@@ -101,6 +105,8 @@ iCanteen has no JSON API. It is server-rendered JSF/JSP. Facts learned by readin
    take or withdraw, re-read the day and check the result. Never trust the response body alone.
 2. **Never retry order or exchange operations automatically.** Tokens are one-shot and a blind retry
    can double-spend. Reload and ask again instead. Repository calls use `retry = false`.
+   The read of the day just before a change (to get a fresh link) is not a retry: nothing was sent yet.
+   If the fresh page no longer offers the same change, throw `ChangedMeanwhile` and send nothing.
 3. **Unknown markup is an error**, not a guess. Wrong data here can mean a wrong order.
 4. **HTTPS only** for canteen addresses.
 5. **Password never in saved instance state**; login stored encrypted with a Keystore key that cannot be exported.
@@ -265,6 +271,10 @@ Priority is not confirmed by the user; the assistant's suggestion is first.
 
 ## 9. Open items and unverified things
 
+- The "multiple browser windows" fix (fresh read before every change) is reasoned from the code and covered by
+  mock tests, but could not be reproduced on the author's canteen. Confirm with the tester whose canteen
+  showed the message that the first order click now works. The week scroll reset was not seen on a device.
+
 - Reminders (`ReminderWorker`) have not been tested by the user yet (the release APK was tried by the user, who
   checked everything except notifications).
 - Tablet layouts and the new `RefreshSpinner` are built without a device (see the log).
@@ -303,6 +313,22 @@ Also update sections 5, 6, 8 and 9 above when they stop being true, and the READ
 visible behavior changes.
 
 ## Log
+
+### 2026-11-10, fresh link before every change, week view scrolls to Monday
+- A tester's canteen answered every first order attempt with a message about several browser windows; the
+  second click worked. Cause (inferred, not reproduced here): the server honors only the newest loaded page's
+  `time`/`token`, the week view loads all days in parallel, so the link the UI held was stale. The failure path
+  then reloaded the day, which is why the second click worked.
+- `ICanteenClient.order`, `setNote`, `putIntoExchange`, `withdrawFromExchange` now read the day right before
+  sending and build the request from that read (`currentMeal`); `takeFromExchange` re-reads the burza page and
+  finds the offer by its path without `time`/`token`. One extra GET per change, not a retry. If the meal no
+  longer offers the same action, the new `CanteenException.ChangedMeanwhile` is thrown and nothing is sent
+  (string `error_changed_meanwhile`; `LunchViewModel` still refreshes the day after any failure).
+- Week view: changing the week scrolls the list to Monday (the initial scroll to today at app start is kept).
+- Privacy policy HTML is also served as a zip for download, because the browser opens a bare `.html` as a page.
+- Verified: `:core:test`, `:app:testDebugUnitTest`, lint (13 cosmetic warnings), mock tests for stale vs fresh
+  token, vanished offer and meal. Not verified: against an affected server, scroll behavior on a device.
+- Existing tests that enqueue responses for mutations needed one more day response before the operation.
 
 ### 2026-11-10, privacy policy, README screenshots
 - `LoginScreen.kt` now links to `https://storage.ivy.yt/fastcanteen/privacypolicy` (the user's storage host, next

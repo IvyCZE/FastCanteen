@@ -108,5 +108,8 @@ public sealed class CanteenException(message: String, cause: Throwable? = null) 
 
     public class OrderNotApplied : CanteenException("The canteen did not apply the change")
 
+    /** The page no longer offers what the user acted on (changed elsewhere, deadline passed); nothing was sent. */
+    public class ChangedMeanwhile : CanteenException("The offer changed since it was shown; nothing was sent")
+
     public class PasswordChangeRejected(public val reason: String) : CanteenException(reason)
 }

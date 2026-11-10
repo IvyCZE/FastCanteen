@@ -71,8 +71,15 @@ public class ICanteenClient(
     override suspend fun menu(day: LocalDate): DayMenu = DayMenuParser.parse(day, fetch(dayUrl(day)))
 
     override suspend fun order(day: LocalDate, meal: Meal): DayMenu = mutations.withLock {
-        val action = meal.action
-        require(action != null && meal.state in ORDERABLE_STATES) { "Meal cannot be changed: ${meal.state}" }
+        val shown = meal.action
+        require(shown != null && meal.state in ORDERABLE_STATES) { "Meal cannot be changed: ${meal.state}" }
+        if (!shown.path.startsWith(ORDER_ENDPOINT)) {
+            throw CanteenException.UnsupportedLayout("unexpected order operation")
+        }
+
+        val action = currentMeal(day, meal).action
+        // The meal must still offer the same change; anything else means it was changed elsewhere.
+        if (action == null || action.type != shown.type) throw CanteenException.ChangedMeanwhile()
         if (!action.path.startsWith(ORDER_ENDPOINT)) {
             throw CanteenException.UnsupportedLayout("unexpected order operation")
         }
@@ -93,7 +100,12 @@ public class ICanteenClient(
     }
 
     override suspend fun setNote(day: LocalDate, meal: Meal, note: String): DayMenu = mutations.withLock {
-        val action = meal.noteAction ?: throw IllegalArgumentException("Meal cannot carry a note")
+        val shown = meal.noteAction ?: throw IllegalArgumentException("Meal cannot carry a note")
+        if (!shown.prefix.startsWith(ORDER_ENDPOINT)) {
+            throw CanteenException.UnsupportedLayout("unexpected note operation")
+        }
+
+        val action = currentMeal(day, meal).noteAction ?: throw CanteenException.ChangedMeanwhile()
         if (!action.prefix.startsWith(ORDER_ENDPOINT)) {
             throw CanteenException.UnsupportedLayout("unexpected note operation")
         }
@@ -120,8 +132,15 @@ public class ICanteenClient(
         val before = DayMenuParser.parse(offer.date, fetch(dayUrl(offer.date)))
             .meals.firstOrNull { it.label == offer.label }?.quantity ?: 0
 
+        // The link comes from the exchange page read just now, and the offer must still be on it.
+        val current = exchangeOffers().firstOrNull { withoutSignature(it.path) == withoutSignature(offer.path) }
+            ?: throw CanteenException.ChangedMeanwhile()
+        if (!current.path.startsWith(ORDER_ENDPOINT) || "type=getburza" !in current.path) {
+            throw CanteenException.UnsupportedLayout("unexpected exchange operation")
+        }
+
         // Success redirects to the main page; refusals are JSON.
-        val body = fetch("${baseUrl}faces/secured/${offer.path}".toHttpUrl())
+        val body = fetch("${baseUrl}faces/secured/${current.path}".toHttpUrl())
         if (body.trim().startsWith("{")) OrderResponseParser.check(body)
 
         val updated = DayMenuParser.parse(offer.date, fetch(dayUrl(offer.date)))
@@ -131,20 +150,42 @@ public class ICanteenClient(
     }
 
     override suspend fun putIntoExchange(day: LocalDate, meal: Meal, quantity: Int): DayMenu = mutations.withLock {
-        val action = meal.exchangePut ?: throw IllegalArgumentException("Meal cannot be put into the exchange")
+        val shown = meal.exchangePut ?: throw IllegalArgumentException("Meal cannot be put into the exchange")
+        if (!shown.prefix.startsWith(ORDER_ENDPOINT) || "type=multiburza" !in shown.prefix) {
+            throw CanteenException.UnsupportedLayout("unexpected exchange operation")
+        }
+        val current = currentMeal(day, meal)
+        val action = current.exchangePut ?: throw CanteenException.ChangedMeanwhile()
+        if (quantity > action.maxQuantity) throw CanteenException.ChangedMeanwhile()
         if (!action.prefix.startsWith(ORDER_ENDPOINT) || "type=multiburza" !in action.prefix) {
             throw CanteenException.UnsupportedLayout("unexpected exchange operation")
         }
-        changeExchange(day, meal, action.path(quantity)) { after -> after.exchangedQuantity > meal.exchangedQuantity }
+        changeExchange(day, meal, action.path(quantity)) { after -> after.exchangedQuantity > current.exchangedQuantity }
     }
 
     override suspend fun withdrawFromExchange(day: LocalDate, meal: Meal): DayMenu = mutations.withLock {
-        val action = meal.exchangeWithdraw ?: throw IllegalArgumentException("Meal is not in the exchange")
+        val shown = meal.exchangeWithdraw ?: throw IllegalArgumentException("Meal is not in the exchange")
+        if (!shown.path.startsWith(ORDER_ENDPOINT) || "type=minusburza" !in shown.path) {
+            throw CanteenException.UnsupportedLayout("unexpected exchange operation")
+        }
+        val current = currentMeal(day, meal)
+        val action = current.exchangeWithdraw ?: throw CanteenException.ChangedMeanwhile()
         if (!action.path.startsWith(ORDER_ENDPOINT) || "type=minusburza" !in action.path) {
             throw CanteenException.UnsupportedLayout("unexpected exchange operation")
         }
-        changeExchange(day, meal, action.path) { after -> after.exchangedQuantity < meal.exchangedQuantity }
+        changeExchange(day, meal, action.path) { after -> after.exchangedQuantity < current.exchangedQuantity }
     }
+
+    /**
+     * Reads [day] again and returns [meal] as the server shows it now. Some canteens honor only the page that was
+     * loaded last and otherwise answer that several browser windows are open, while the app loads a whole week at
+     * once, so the link of an earlier read is stale. A change is therefore built from this read, which is the
+     * newest one. It is not a retry: nothing has been sent yet.
+     */
+    private suspend fun currentMeal(day: LocalDate, meal: Meal): Meal =
+        DayMenuParser.parse(day, fetch(dayUrl(day))).meals
+            .firstOrNull { it.label == meal.label && it.course == meal.course }
+            ?: throw CanteenException.ChangedMeanwhile()
 
     private suspend fun changeExchange(day: LocalDate, meal: Meal, path: String, applied: (Meal) -> Boolean): DayMenu {
         // The success body is a credit fragment; refusals are JSON. The re-read below decides.
@@ -253,6 +294,9 @@ public class ICanteenClient(
         public fun sanitizeNote(note: String): String = note.replace("<", "").replace(Regex("[\\r\\n]+"), " ").trim()
 
         private const val ORDER_ENDPOINT = "db/dbProcessOrder.jsp?"
+
+        /** The operation without the per-page `time` and `token`, to tell whether two reads show the same offer. */
+        private fun withoutSignature(path: String) = path.replace(Regex("(?<=[?&])(time|token)=[^&]*&?"), "")
         private val ORDERABLE_STATES = setOf(MealState.ORDERED, MealState.ORDERABLE, MealState.REORDERABLE)
 
         /**
