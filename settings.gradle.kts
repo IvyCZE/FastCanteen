@@ -14,7 +14,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "librecanteen"
+rootProject.name = "fastcanteen"
 
 include(":core")
 include(":app")

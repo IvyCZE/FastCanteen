@@ -7,19 +7,19 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-// Signing secrets stay outside the repository: point LIBRECANTEEN_KEYSTORE_PROPERTIES at a
+// Signing secrets stay outside the repository: point FASTCANTEEN_KEYSTORE_PROPERTIES at a
 // properties file (storeFile, storePassword, keyAlias, keyPassword). Without it the release
 // build is produced unsigned.
-val signingProperties = System.getenv("LIBRECANTEEN_KEYSTORE_PROPERTIES")
+val signingProperties = System.getenv("FASTCANTEEN_KEYSTORE_PROPERTIES")
     ?.let(::File)?.takeIf { it.isFile }
     ?.let { file -> Properties().apply { file.inputStream().use(::load) } }
 
 android {
-    namespace = "yt.ivy.librecanteen"
+    namespace = "yt.ivy.fastcanteen"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "yt.ivy.librecanteen"
+        applicationId = "yt.ivy.fastcanteen"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

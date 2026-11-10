@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">LibreCanteen</string>
+    <string name="app_name">FastCanteen</string>
 
     <string name="tab_menu">Obědy</string>
     <string name="tab_settings">Nastavení</string>
@@ -55,7 +55,7 @@
     <string name="settings_change_password">Změnit heslo</string>
     <string name="settings_sign_out">Odhlásit se</string>
     <string name="settings_about">O aplikaci</string>
-    <string name="settings_about_text">LibreCanteen %1$s. Neoficiální klient pro iCanteen s veřejným zdrojovým kódem, nespojený se společností Z-WARE s.r.o.</string>
+    <string name="settings_about_text">FastCanteen %1$s. Neoficiální klient pro iCanteen s veřejným zdrojovým kódem, nespojený se společností Z-WARE s.r.o.</string>
 
     <string name="password_current">Stávající heslo</string>
     <string name="password_new">Nové heslo</string>
@@ -75,7 +75,7 @@
     <string name="settings_lock">Zámek aplikace</string>
     <string name="settings_lock_hint">Odemykání otiskem, obličejem nebo zámkem zařízení.</string>
     <string name="settings_lock_unavailable">V zařízení není nastavené biometrické ověření.</string>
-    <string name="lock_prompt_title">Odemknout LibreCanteen</string>
+    <string name="lock_prompt_title">Odemknout FastCanteen</string>
     <string name="lock_unlock">Odemknout</string>
     <string name="channel_ordering">Objednávání</string>
     <string name="reminder_title">Nemáš objednáno na příští týden</string>

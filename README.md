@@ -1,10 +1,10 @@
-# LibreCanteen
+# FastCanteen
 
 A source-available Android client for school canteens running **iCanteen**, built to be pleasant to use:
 a calm, fast interface for the weekly menu, one-tap ordering, credit, payments and account settings
 (including changing your password).
 
-> **Not affiliated with Z-WARE s.r.o.** LibreCanteen is an independent, non-commercial project.
+> **Not affiliated with Z-WARE s.r.o.** FastCanteen is an independent, non-commercial project.
 > "iCanteen" is a product of Z-WARE s.r.o. This project contains none of its code, styles or images.
 
 ## Features
@@ -62,7 +62,7 @@ A signed release build needs your own keystore. Keep it and its passwords outsid
 describe it in a properties file (`storeFile`, `storePassword`, `keyAlias`, `keyPassword`) and run:
 
 ```sh
-LIBRECANTEEN_KEYSTORE_PROPERTIES=/path/to/keystore.properties ./gradlew :app:assembleRelease
+FASTCANTEEN_KEYSTORE_PROPERTIES=/path/to/keystore.properties ./gradlew :app:assembleRelease
 ```
 
 Without that variable the release APK is built unsigned. Updates only install over an earlier version

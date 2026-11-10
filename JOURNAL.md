@@ -1,4 +1,4 @@
-# LibreCanteen journal
+# FastCanteen journal
 
 Living project notes: what the app is, why it is built the way it is, what has been done, what is
 planned. **Read this before changing anything, and add an entry (see the end) when you finish.**
@@ -8,7 +8,7 @@ No personal data belongs here, same rule as the rest of the repository.
 
 ## 1. What this is
 
-LibreCanteen is an unofficial, source-available Android client for school canteens that run
+FastCanteen is an unofficial, source-available Android client for school canteens that run
 **iCanteen** (Z-WARE s.r.o.). The stock web UI is dated and clumsy on a phone. This app offers a calm
 interface for the weekly menu, ordering, credit, payments, order history, allergens and the meal
 exchange ("burza").
@@ -23,7 +23,7 @@ Goals and constraints agreed with the user:
   use need the author's permission. The reason: another canteen client was re-published on a store as if it
   were the official app. Not an open-source license. Nothing personal in the repo: no credentials, school name, address, usernames,
   balances, tokens or real names. Fixtures are anonymized.
-- Name **LibreCanteen**, package `yt.ivy.librecanteen`.
+- Name **FastCanteen**, package `yt.ivy.fastcanteen`.
 - Languages: Czech (default) and English. Themes: System, Light, Dark, AMOLED, optional dynamic colors.
 - Stack: Kotlin, Jetpack Compose (Material 3), OkHttp, Jsoup, kotlinx-serialization, WorkManager,
   AndroidX Biometric. `minSdk 26`, `targetSdk`/`compileSdk 36`. Versions are in `gradle/libs.versions.toml`.
@@ -40,7 +40,7 @@ app/    Android app (Compose UI, view models, storage, reminders, app lock).
 `CanteenProvider` (core) is the seam: everything iCanteen-specific is behind it, so another
 backend (for example an official API, should one appear) can replace `ICanteenClient` without touching the UI.
 
-### core (`yt.ivy.librecanteen.core`)
+### core (`yt.ivy.fastcanteen.core`)
 
 | File | Role |
 | --- | --- |
@@ -55,11 +55,11 @@ Tests live in `core/src/test` and run against anonymized HTML in
 `core/src/test/resources/fixtures/icanteen/2.22/`. Files named `synthetic_*` were written by hand
 from the site's own scripts, not captured.
 
-### app (`yt.ivy.librecanteen`)
+### app (`yt.ivy.fastcanteen`)
 
 | Area | Files |
 | --- | --- |
-| Entry | `LibreCanteenApp.kt`, `MainActivity.kt`, `AppLocale.kt` (applies the chosen language to contexts), `ui/AppRoot.kt` (3 tabs: Info, Lunch, Burza; wiring of view models) |
+| Entry | `FastCanteenApp.kt`, `MainActivity.kt`, `AppLocale.kt` (applies the chosen language to contexts), `ui/AppRoot.kt` (3 tabs: Info, Lunch, Burza; wiring of view models) |
 | Data | `data/CanteenRepository.kt` (session + re-login, passthroughs), `CredentialVault.kt` (Android Keystore, non-exportable key), `AppSettings.kt`, `MenuCache.kt` (`FileMenuCache`, offline), `ReminderPolicy.kt` |
 | Reminders | `reminders/Reminders.kt` (WorkManager `ReminderWorker`, from Thursday if next week has no order) |
 | Lunch | `ui/lunch/LunchScreen.kt`, `LunchViewModel.kt`, `LunchNav.kt` (week/month navigation logic), `CommonDishes.kt` (shared leading dishes) |
@@ -152,7 +152,7 @@ the page, with a small status line. Reminders (WorkManager) and biometric app lo
 Language (its own settings page): follow the system, Czech or English. The choice is stored in
 `AppSettings`. `AppLocale.wrap` applies it in `attachBaseContext` (app, activity, reminder notification) and
 sets the default `Locale`, so dates and weekday names follow it too. Changing it recreates `MainActivity`.
-The app lock state lives in `LibreCanteenApp`, so a recreate does not ask for the lock again. The canteen
+The app lock state lives in `FastCanteenApp`, so a recreate does not ask for the lock again. The canteen
 data is not affected: the view models reload from the cache. The currency stays "Kč".
 
 ### Login
@@ -226,9 +226,9 @@ Notes:
 
 ### Release
 - Release build is minified and shrunk (`proguard-rules.pro`). The signing key lives **outside the repo**;
-  `LIBRECANTEEN_KEYSTORE_PROPERTIES` points at a properties file (`storeFile`, `storePassword`,
+  `FASTCANTEEN_KEYSTORE_PROPERTIES` points at a properties file (`storeFile`, `storePassword`,
   `keyAlias`, `keyPassword`). Without it the release APK is unsigned.
-  `LIBRECANTEEN_KEYSTORE_PROPERTIES=/path ./gradlew :app:assembleRelease`
+  `FASTCANTEEN_KEYSTORE_PROPERTIES=/path ./gradlew :app:assembleRelease`
 - Updates only install over a build signed with the same key, so **the keystore must be backed up**.
   Debug and release builds use different keys and cannot replace each other.
 - The release build has been built and signature-verified but not run on a device yet.
@@ -297,6 +297,22 @@ Also update sections 5, 6, 8 and 9 above when they stop being true, and the READ
 visible behavior changes.
 
 ## Log
+
+### 2026-11-10, renamed to FastCanteen
+- The app was called LibreCanteen. "Libre" suggests free software, which PolyForm Strict is not, so the user
+  chose **FastCanteen** (searched by the user on Google and GitHub, nothing found; no trademark check was done).
+  An earlier idea, "MeCanteen", was dropped.
+- Renamed everywhere: display name (`app_name`), `applicationId` and `namespace` `yt.ivy.fastcanteen`, the Kotlin
+  package and directories in `:app` and `:core`, `FastCanteenApp`, `Theme.FastCanteen`, the signing env variable
+  (now `FASTCANTEEN_KEYSTORE_PROPERTIES`; the keystore file itself did not move), README, `AGENTS.md`. Older log
+  entries below were renamed by the same search and replace, so they say FastCanteen for things done under the old
+  name.
+- The new `applicationId` means the phone treats it as a different app: the old install stays next to it, and the
+  user has to sign in again. Same signing key, so nothing else changes.
+- The privacy policy link in `LoginScreen.kt` now points to `privacypolicy.fastcanteen.ivy.yt`, by analogy with the
+  old host. That host did not resolve even under the old name; it still has to be set up by the user.
+- Commits from this session use the git identity configured on the machine (`me@` address); the older commits
+  carry the former e-mail, see the history rewrite note below.
 
 ### 2026-10-20, license changed to PolyForm Strict
 - `LICENSE` is now PolyForm Strict 1.0.0 (text from the official repository, with a Required Notice line);
@@ -415,7 +431,7 @@ visible behavior changes.
 - Applied in `attachBaseContext` through `AppLocale.wrap`, because `AppCompat` per-app locales need an
   `AppCompatActivity` below Android 13, and the activity extends `FragmentActivity`. The same wrap is used
   for the reminder notification, so it is not stuck in the old language until the process restarts.
-- Changing the language recreates `MainActivity`. The app lock flag moved to `LibreCanteenApp` so the
+- Changing the language recreates `MainActivity`. The app lock flag moved to `FastCanteenApp` so the
   recreate does not relock the app.
 - The theme and language cards share one `RadioChoices` composable.
 - Verified: `:core:test`, `:app:testDebugUnitTest`, `:app:lintDebug` (only the expected `UseKtx` and

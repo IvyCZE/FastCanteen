@@ -1,4 +1,4 @@
-# Instructions for agents working on LibreCanteen
+# Instructions for agents working on FastCanteen
 
 ## First and last step: the journal
 
@@ -55,7 +55,7 @@ Unofficial source-available (PolyForm Strict) Android client for iCanteen school
 - Low-RAM host: add `--no-daemon -Pkotlin.compiler.execution.strategy=in-process`, and stop idle
   Kotlin daemons afterwards.
 - Expected lint output: only the cosmetic `UseKtx` and `UseTomlInstead` warnings. Fix anything else.
-- Release: `LIBRECANTEEN_KEYSTORE_PROPERTIES=/path/to/keystore.properties ./gradlew :app:assembleRelease`.
+- Release: `FASTCANTEEN_KEYSTORE_PROPERTIES=/path/to/keystore.properties ./gradlew :app:assembleRelease`.
 - There is no emulator here. Report honestly that UI changes were not seen on a device, and ask the
   user to check on their phone.
 

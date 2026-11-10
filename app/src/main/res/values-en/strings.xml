@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">LibreCanteen</string>
+    <string name="app_name">FastCanteen</string>
 
     <string name="tab_menu">Lunches</string>
     <string name="tab_settings">Settings</string>
@@ -55,7 +55,7 @@
     <string name="settings_change_password">Change password</string>
     <string name="settings_sign_out">Sign out</string>
     <string name="settings_about">About</string>
-    <string name="settings_about_text">LibreCanteen %1$s. An unofficial iCanteen client with public source code, not affiliated with Z-WARE s.r.o.</string>
+    <string name="settings_about_text">FastCanteen %1$s. An unofficial iCanteen client with public source code, not affiliated with Z-WARE s.r.o.</string>
 
     <string name="password_current">Current password</string>
     <string name="password_new">New password</string>
@@ -75,7 +75,7 @@
     <string name="settings_lock">App lock</string>
     <string name="settings_lock_hint">Unlock with fingerprint, face or the device screen lock.</string>
     <string name="settings_lock_unavailable">No biometric authentication is set up on this device.</string>
-    <string name="lock_prompt_title">Unlock LibreCanteen</string>
+    <string name="lock_prompt_title">Unlock FastCanteen</string>
     <string name="lock_unlock">Unlock</string>
     <string name="channel_ordering">Ordering</string>
     <string name="reminder_title">Nothing ordered for next week</string>
