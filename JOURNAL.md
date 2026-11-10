@@ -8,7 +8,7 @@ No personal data belongs here, same rule as the rest of the repository.
 
 ## 1. What this is
 
-LibreCanteen is an unofficial, open-source Android client for school canteens that run
+LibreCanteen is an unofficial, source-available Android client for school canteens that run
 **iCanteen** (Z-WARE s.r.o.). The stock web UI is dated and clumsy on a phone. This app offers a calm
 interface for the weekly menu, ordering, credit, payments, order history, allergens and the meal
 exchange ("burza").
@@ -18,7 +18,10 @@ Goals and constraints agreed with the user:
 - **Android only, no backend of our own.** The app talks directly to the canteen's server.
 - **Neutral, polished UX**, portfolio quality, to be used by the author and friends. Possibly pitched
   to Z-WARE later, so the code never contains their code, styles or images, and it says so in the README.
-- **Open source (MIT).** Nothing personal in the repo: no credentials, school name, address, usernames,
+- **Source-available, PolyForm Strict 1.0.0** (was MIT until 2026-10-20; the repository had not been
+  published). Anyone may read, build and use it noncommercially; changing it, redistributing it and commercial
+  use need the author's permission. The reason: another canteen client was re-published on a store as if it
+  were the official app. Not an open-source license. Nothing personal in the repo: no credentials, school name, address, usernames,
   balances, tokens or real names. Fixtures are anonymized.
 - Name **LibreCanteen**, package `yt.ivy.librecanteen`.
 - Languages: Czech (default) and English. Themes: System, Light, Dark, AMOLED, optional dynamic colors.
@@ -62,7 +65,7 @@ from the site's own scripts, not captured.
 | Lunch | `ui/lunch/LunchScreen.kt`, `LunchViewModel.kt`, `LunchNav.kt` (week/month navigation logic), `CommonDishes.kt` (shared leading dishes) |
 | Burza | `ui/exchange/ExchangeScreen.kt`, `ExchangeViewModel.kt` |
 | Other screens | `ui/history/HistoryScreen.kt`, `ui/login/LoginScreen.kt`, `ui/settings/SettingsScreen.kt`, `DebouncedSaver.kt`, `ui/lock/*` (biometric app lock) |
-| UI kit | `ui/components/DateBar.kt`, `Swipe.kt` (`horizontalSwipe`, 56 dp threshold), `ui/theme/Theme.kt`, `Icons.kt` (Material Symbols paths for icons missing from `material-icons-core`), `ui/Format.kt` |
+| UI kit | `ui/components/DateBar.kt`, `Adaptive.kt` (`CenteredContent`, rail/width constants), `PullRefresh.kt` (top bar refresh, `RefreshSpinner`), `Swipe.kt` (`horizontalSwipe`, 56 dp threshold), `ui/theme/Theme.kt`, `Icons.kt` (Material Symbols paths for icons missing from `material-icons-core`), `ui/Format.kt` |
 | Resources | `res/values/strings.xml` (Czech, default), `res/values-en/strings.xml`. **Every string needs both.** |
 
 ## 3. How iCanteen behaves (2.22, reverse-engineered)
@@ -109,11 +112,14 @@ iCanteen has no JSON API. It is server-rendered JSF/JSP. Facts learned by readin
 ## 5. Current state of the app
 
 ### Navigation
-Bottom bar: **Info** (order history and payments), **Lunch** (menu), **Burza** (exchange).
+Bottom bar: **Info** (order history and payments), **Lunch** (menu), **Burza** (exchange). From 600 dp window
+width it is a navigation rail on the left instead. Info, Burza, settings and the Lunch lists are centered at
+640 dp max (`ui/components/Adaptive.kt`); Lunch month view with 840 dp or more shows the calendar (380 dp) on the
+left and the day on the right.
 The top bar is one line with the user's credit. Pull-to-refresh (all three tabs) draws no indicator over the
-content: a 20 dp spinner appears in the top bar before the credit, an arc that follows the finger while pulling
-and a spinning one while loading (`ui/components/PullRefresh.kt`, `TopBarPullToRefresh` reports through
-`LocalTopBarRefresh`). Settings are split into category pages: Customization,
+content: a 20 dp spinner appears in the middle of the top bar, a 270° arc that follows the finger while pulling
+and turns at constant speed while loading (`RefreshSpinner` in `ui/components/PullRefresh.kt`,
+`TopBarPullToRefresh` reports through `LocalTopBarRefresh`). Settings are split into category pages: Customization,
 Language, Account and security (including app lock), Allergens, Notifications, About. Back returns to the list first.
 
 ### Lunch
@@ -242,7 +248,7 @@ Priority is not confirmed by the user; the assistant's suggestion is first.
 
 1. **Pickup reminder and low-credit warning** notifications (approved in principle).
 2. **Home-screen widget** (today's meal / order state) (approved in principle).
-3. **Tablet / wide layout** (approved in principle).
+3. ~~Tablet / wide layout~~ done (see the log, 2026-10-19); only needs a check on a tablet.
 4. **Release prep:** public GitHub repository, CI (tests + lint), screenshots, privacy note in README,
    version bump, signed release distribution, a **parser health check** (detect when the server markup changes
    and fail loudly with a useful message).
@@ -253,8 +259,11 @@ Priority is not confirmed by the user; the assistant's suggestion is first.
 
 ## 9. Open items and unverified things
 
-- Reminders (`ReminderWorker`) have not been tested by the user yet.
-- Top bar refresh spinner (arc while pulling, spinning while loading, no overlay), pull-to-refresh on empty
+- Reminders (`ReminderWorker`) have not been tested by the user yet (the release APK was tried by the user, who
+  checked everything except notifications).
+- Tablet layouts and the new `RefreshSpinner` are built without a device (see the log).
+- Top bar refresh spinner (arc while pulling, spinning while loading, no overlay; user saw the first version and
+  found the animation odd, replaced by `RefreshSpinner`), pull-to-refresh on empty
   or failed Burza, Info and Lunch screens, and the lighter login app bar with light status bar icons in the
   light theme: built without a device.
 - Login fields (`#141312`) on the `#1c1b1a` panel: check on the phone that they read as input fields.
@@ -288,6 +297,38 @@ Also update sections 5, 6, 8 and 9 above when they stop being true, and the READ
 visible behavior changes.
 
 ## Log
+
+### 2026-10-20, license changed to PolyForm Strict
+- `LICENSE` is now PolyForm Strict 1.0.0 (text from the official repository, with a Required Notice line);
+  README, `AGENTS.md`, this journal and the About text (both languages) no longer say "open source".
+- Strict also forbids changes, not only redistribution. The user first described "modify for personal purposes";
+  they chose Strict anyway. If that matters later, PolyForm Noncommercial allows changes but also noncommercial
+  redistribution, so a custom text would be needed for the exact mix.
+- README states that the only official builds are the repository's releases and that the app is not in any app
+  store. This was added by the assistant from the user's concern about store impersonation; confirm it.
+- Open before the first public push: the 35 commits carry the author's e-mail with the private domain (the user
+  wants `me@ivy.yt`; history rewrite to be done by the user, who has the git identity), the app name is
+  undecided (user considering "MeCanteen"), the privacy policy URL in `LoginScreen.kt` did not resolve.
+- Not verified: lint and tests were not rerun after the string change (text only).
+
+### 2026-10-19, tablet layouts, centered refresh spinner, issued meal margin
+- Refresh spinner: the stock `CircularProgressIndicator` was replaced by `RefreshSpinner`
+  (`ui/components/PullRefresh.kt`): a fixed 270° arc that grows and turns with the finger and then turns at a
+  constant speed from where the finger left it. The stock one switched from a determinate to the indeterminate
+  (growing/shrinking) animation, which looked odd at 20 dp. It now sits in the middle of the top bar (overlaid,
+  so it no longer pushes the credit around).
+- Issued meal card: it ends on the "already issued" text, so the bottom padding is 12 dp instead of 8 dp, to
+  match the top (6 dp + the title's 6 dp). Interpretation: "smaller margin than other texts of this type" was
+  taken as the bottom edge of the card being tighter than the top.
+- Tablet support (first GitHub release scope): from 600 dp window width the bottom bar becomes a
+  `NavigationRail`; Info, Burza, settings and the Lunch lists are centered at 640 dp max (`CenteredContent`,
+  `ContentMaxWidth` in `ui/components/Adaptive.kt`); in Lunch month view with 840 dp or more available (after
+  the rail) the calendar (380 dp) is on the left and the day on the right. Widths are measured from the window
+  (`LocalWindowInfo`), so split-screen and rotation follow. Phones are unchanged.
+- Verified: `:core:test`, `:app:testDebugUnitTest`, `:app:lintDebug` (only `UseKtx`, `UseTomlInstead`),
+  `:app:assembleDebug`. Not seen on a device or tablet; there is no emulator here.
+- Follow-ups: check on a tablet (rail, centered lists, two-pane Lunch, day swipe in the right pane, the
+  DateBar still spans the full width) and the new spinner on the phone. Tablet item removed from the plan.
 
 ### 2026-10-19, refresh spinner in the top bar, lighter login app bar
 - The pull-to-refresh indicator overlapped the content. `PullToRefreshBox` is kept for the gesture but its

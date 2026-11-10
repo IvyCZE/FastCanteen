@@ -1,10 +1,12 @@
 package yt.ivy.librecanteen.ui.settings
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -74,6 +76,7 @@ import kotlinx.coroutines.launch
 import yt.ivy.librecanteen.R
 import yt.ivy.librecanteen.core.model.AllergenSettings
 import yt.ivy.librecanteen.data.Account
+import yt.ivy.librecanteen.ui.components.ContentMaxWidth
 import yt.ivy.librecanteen.data.AppLanguage
 import yt.ivy.librecanteen.data.AppSettings
 import yt.ivy.librecanteen.data.CalendarMode
@@ -244,32 +247,34 @@ fun SettingsScreen(
             )
         },
     ) { padding ->
-        Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState())) {
-            when (page) {
-                null -> SettingsHome(version) { pageName = it.name }
-                SettingsPage.Customization -> PageColumn { CustomizationPage(settings) }
-                SettingsPage.Language -> PageColumn { LanguagePage(settings) }
-                SettingsPage.Account -> PageColumn {
-                    AccountPage(
-                        account, password, onChangePassword, onPasswordDialogClosed, onSignOut,
-                        biometricAvailable, biometricLock, onBiometricLock,
-                    )
-                }
-                SettingsPage.Allergens -> PageColumn {
-                    AllergensPage(allergens, onOpen = onOpenAllergens, onSelect = onSelectAllergens, onClose = onCloseAllergens)
-                }
-                SettingsPage.Notifications -> PageColumn {
-                    SettingsCard {
-                        SwitchRow(stringResource(R.string.settings_reminders), stringResource(R.string.settings_reminders_hint), reminders, true, onReminders)
-                    }
-                }
-                SettingsPage.About -> PageColumn {
-                    SettingsCard {
-                        Text(
-                            stringResource(R.string.settings_about_text, version),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        Box(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
+            Column(Modifier.widthIn(max = ContentMaxWidth).fillMaxWidth()) {
+                when (page) {
+                    null -> SettingsHome(version) { pageName = it.name }
+                    SettingsPage.Customization -> PageColumn { CustomizationPage(settings) }
+                    SettingsPage.Language -> PageColumn { LanguagePage(settings) }
+                    SettingsPage.Account -> PageColumn {
+                        AccountPage(
+                            account, password, onChangePassword, onPasswordDialogClosed, onSignOut,
+                            biometricAvailable, biometricLock, onBiometricLock,
                         )
+                    }
+                    SettingsPage.Allergens -> PageColumn {
+                        AllergensPage(allergens, onOpen = onOpenAllergens, onSelect = onSelectAllergens, onClose = onCloseAllergens)
+                    }
+                    SettingsPage.Notifications -> PageColumn {
+                        SettingsCard {
+                            SwitchRow(stringResource(R.string.settings_reminders), stringResource(R.string.settings_reminders_hint), reminders, true, onReminders)
+                        }
+                    }
+                    SettingsPage.About -> PageColumn {
+                        SettingsCard {
+                            Text(
+                                stringResource(R.string.settings_about_text, version),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
             }

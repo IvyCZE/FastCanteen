@@ -1,6 +1,6 @@
 # LibreCanteen
 
-An open-source Android client for school canteens running **iCanteen**, built to be pleasant to use:
+A source-available Android client for school canteens running **iCanteen**, built to be pleasant to use:
 a calm, fast interface for the weekly menu, one-tap ordering, credit, payments and account settings
 (including changing your password).
 
@@ -22,6 +22,7 @@ a calm, fast interface for the weekly menu, one-tap ordering, credit, payments a
 - Optional reminder from Thursday when nothing is ordered for next week
 - Optional app lock with biometrics or the device screen lock
 - Czech and English (follows the system or can be set in the app), light and dark theme
+- Tablet layouts: a navigation rail from 600 dp width, lists and settings centered at a readable width, and on wide screens the month calendar beside the chosen day
 - Two-step sign-in (welcome, then address and credentials on one screen) and a themed app icon that follows the wallpaper colors on Android 13+
 
 Not implemented yet: multiple portions (the author's canteen does not offer them).
@@ -82,4 +83,7 @@ No credentials, school names or personal data belong in this repository.
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+[PolyForm Strict 1.0.0](LICENSE). The source is public so you can read it, build it yourself and use it for
+noncommercial and personal purposes. You may not change it, redistribute it or use it commercially. This is
+not an open-source license. The only official builds are the releases in this repository; the app is not
+published in any app store.

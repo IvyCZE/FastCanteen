@@ -4,6 +4,9 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
@@ -11,12 +14,13 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -31,8 +35,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -44,7 +51,10 @@ import yt.ivy.librecanteen.core.model.Money
 import yt.ivy.librecanteen.data.AppSettings
 import yt.ivy.librecanteen.data.CanteenRepository
 import yt.ivy.librecanteen.reminders.Reminders
+import yt.ivy.librecanteen.ui.components.CenteredContent
 import yt.ivy.librecanteen.ui.components.LocalTopBarRefresh
+import yt.ivy.librecanteen.ui.components.RailMinWidth
+import yt.ivy.librecanteen.ui.components.RefreshSpinner
 import yt.ivy.librecanteen.ui.components.TopBarRefreshState
 import yt.ivy.librecanteen.ui.history.HistoryScreen
 import yt.ivy.librecanteen.ui.history.HistoryViewModel
@@ -116,6 +126,7 @@ private fun MainScaffold(repository: CanteenRepository, settings: AppSettings, l
 
     val credit by repository.credit.collectAsStateWithLifecycle()
     val refresh = remember { TopBarRefreshState() }
+    val rail = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() } >= RailMinWidth
 
     CompositionLocalProvider(LocalTopBarRefresh provides refresh) {
         Scaffold(
@@ -123,7 +134,7 @@ private fun MainScaffold(repository: CanteenRepository, settings: AppSettings, l
             snackbarHost = { SnackbarHost(snackbar) },
             topBar = { AppTopBar(credit, refresh) { showSettings = true } },
             bottomBar = {
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+                if (!rail) NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
                     Tab.entries.forEach { tab ->
                         NavigationBarItem(
                             selected = selected == tab.ordinal,
@@ -135,45 +146,60 @@ private fun MainScaffold(repository: CanteenRepository, settings: AppSettings, l
                 }
             },
         ) { padding ->
-            Box(Modifier.padding(padding)) {
-                when (Tab.entries[selected]) {
-                    Tab.Info -> {
-                        val state by historyVm.state.collectAsStateWithLifecycle()
-                        HistoryScreen(state, historyVm::load)
-                    }
-                    Tab.Burza -> {
-                        val state by exchangeVm.state.collectAsStateWithLifecycle()
-                        ExchangeScreen(
-                            state = state,
-                            events = exchangeVm.eventFlow,
-                            snackbar = snackbar,
-                            onRefresh = exchangeVm::load,
-                            onTake = exchangeVm::take,
-                            onWithdraw = exchangeVm::withdraw,
+            Row(Modifier.padding(padding).fillMaxSize()) {
+                // The Scaffold padding already covers the system bars, so the rail adds no insets of its own.
+                if (rail) NavigationRail(containerColor = MaterialTheme.colorScheme.surfaceContainer, windowInsets = WindowInsets(0, 0, 0, 0)) {
+                    Tab.entries.forEach { tab ->
+                        NavigationRailItem(
+                            selected = selected == tab.ordinal,
+                            onClick = { selected = tab.ordinal },
+                            icon = { Icon(tab.icon(), contentDescription = null) },
+                            label = { Text(stringResource(tab.label)) },
                         )
                     }
-                    Tab.Lunch -> {
-                        val state by lunchVm.state.collectAsStateWithLifecycle()
-                        val mode by settings.calendarMode.collectAsStateWithLifecycle()
-                        LunchScreen(
-                            state = state,
-                            mode = mode,
-                            events = lunchVm.eventFlow,
-                            snackbar = snackbar,
-                            onRefresh = { lunchVm.load(forceAll = true) },
-                            onPrevious = lunchVm::previous,
-                            onNext = lunchVm::next,
-                            onPreviousMonth = lunchVm::previousMonth,
-                            onNextMonth = lunchVm::nextMonth,
-                            onSelect = lunchVm::select,
-                            onPickMonth = lunchVm::pickMonth,
-                            onInitialScroll = lunchVm::consumeInitialScroll,
-                            onToggleMode = lunchVm::toggleMode,
-                            onAction = lunchVm::apply,
-                            onNote = lunchVm::saveNote,
-                            onExchangePut = lunchVm::putIntoExchange,
-                            onExchangeWithdraw = lunchVm::withdrawFromExchange,
-                        )
+                }
+                Box(Modifier.weight(1f).fillMaxHeight()) {
+                    when (Tab.entries[selected]) {
+                        Tab.Info -> {
+                            val state by historyVm.state.collectAsStateWithLifecycle()
+                            CenteredContent { HistoryScreen(state, historyVm::load) }
+                        }
+                        Tab.Burza -> {
+                            val state by exchangeVm.state.collectAsStateWithLifecycle()
+                            CenteredContent {
+                                ExchangeScreen(
+                                    state = state,
+                                    events = exchangeVm.eventFlow,
+                                    snackbar = snackbar,
+                                    onRefresh = exchangeVm::load,
+                                    onTake = exchangeVm::take,
+                                    onWithdraw = exchangeVm::withdraw,
+                                )
+                            }
+                        }
+                        Tab.Lunch -> {
+                            val state by lunchVm.state.collectAsStateWithLifecycle()
+                            val mode by settings.calendarMode.collectAsStateWithLifecycle()
+                            LunchScreen(
+                                state = state,
+                                mode = mode,
+                                events = lunchVm.eventFlow,
+                                snackbar = snackbar,
+                                onRefresh = { lunchVm.load(forceAll = true) },
+                                onPrevious = lunchVm::previous,
+                                onNext = lunchVm::next,
+                                onPreviousMonth = lunchVm::previousMonth,
+                                onNextMonth = lunchVm::nextMonth,
+                                onSelect = lunchVm::select,
+                                onPickMonth = lunchVm::pickMonth,
+                                onInitialScroll = lunchVm::consumeInitialScroll,
+                                onToggleMode = lunchVm::toggleMode,
+                                onAction = lunchVm::apply,
+                                onNote = lunchVm::saveNote,
+                                onExchangePut = lunchVm::putIntoExchange,
+                                onExchangeWithdraw = lunchVm::withdrawFromExchange,
+                            )
+                        }
                     }
                 }
             }
@@ -182,35 +208,31 @@ private fun MainScaffold(repository: CanteenRepository, settings: AppSettings, l
 }
 
 /**
- * One row: the app name, the refresh spinner, the credit, and the settings button. The username lives
- * in settings. The spinner follows the finger while pulling and spins while loading.
+ * One row: the app name, the credit, and the settings button, with the refresh spinner in the middle of the bar.
+ * The username lives in settings. The spinner follows the finger while pulling and spins while loading.
  */
 @Composable
 private fun AppTopBar(credit: Money?, refresh: TopBarRefreshState, onSettings: () -> Unit) {
     Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
-        Row(
-            Modifier.statusBarsPadding().fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-        ) {
-            Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-            if (refresh.refreshing) {
-                CircularProgressIndicator(Modifier.padding(end = 12.dp).size(20.dp), strokeWidth = 2.dp)
-            } else if (refresh.pull > 0f) {
-                CircularProgressIndicator(
-                    progress = { refresh.pull.coerceIn(0f, 1f) },
-                    modifier = Modifier.padding(end = 12.dp).size(20.dp),
-                    strokeWidth = 2.dp,
-                )
+        Box(Modifier.statusBarsPadding().fillMaxWidth()) {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                if (credit != null) {
+                    Text(
+                        formatMoney(credit),
+                        style = MaterialTheme.typography.titleMedium.merge(NumericStyle),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                IconButton(onClick = onSettings) {
+                    Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.tab_settings))
+                }
             }
-            if (credit != null) {
-                Text(
-                    formatMoney(credit),
-                    style = MaterialTheme.typography.titleMedium.merge(NumericStyle),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            IconButton(onClick = onSettings) {
-                Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.tab_settings))
+            if (refresh.refreshing || refresh.pull > 0f) {
+                RefreshSpinner(refresh.pull, refresh.refreshing, Modifier.align(Alignment.Center))
             }
         }
     }

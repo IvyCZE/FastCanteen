@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -63,6 +64,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -102,6 +104,7 @@ import yt.ivy.librecanteen.core.model.exchangedQuantity
 import yt.ivy.librecanteen.data.CalendarMode
 import yt.ivy.librecanteen.ui.UiText
 import yt.ivy.librecanteen.ui.asString
+import yt.ivy.librecanteen.ui.components.ContentMaxWidth
 import yt.ivy.librecanteen.ui.components.DateBar
 import yt.ivy.librecanteen.ui.components.TopBarPullToRefresh
 import yt.ivy.librecanteen.ui.components.horizontalSwipe
@@ -164,69 +167,94 @@ fun LunchScreen(
         }
     }
 
-    Column(Modifier.fillMaxSize()) {
-        if (state.offline) {
-            Text(
-                stringResource(R.string.offline_banner),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                modifier = Modifier.fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.secondaryContainer)
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-            )
-        }
-        TopBarPullToRefresh(isRefreshing = state.loading, onRefresh = onRefresh, modifier = Modifier.weight(1f).fillMaxWidth()) {
-            val error = state.error
-            if (error != null && state.days.isEmpty()) {
-                Column(
-                    Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(error.asString(), style = MaterialTheme.typography.bodyMedium)
-                    TextButton(onClick = onRefresh) { Text(stringResource(R.string.retry)) }
-                }
-            } else {
-                LazyColumn(
-                    state = listState,
-                    // Dragging sideways moves a day (month view) or a week; the calendar has its own swipe for months.
-                    modifier = Modifier.fillMaxSize().horizontalSwipe(onPrevious, onNext),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    if (mode == CalendarMode.WEEK) {
-                        items(state.week, key = { it.toString() }) { day ->
-                            DaySection(day, state.days[day], state, showHeader = true, onAction, onNote, onExchangePut, onExchangeWithdraw, Modifier.padding(bottom = 12.dp))
-                        }
-                    } else {
-                        item(key = "calendar") {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val twoPane = mode == CalendarMode.MONTH && maxWidth >= TWO_PANE_MIN_WIDTH
+        Column(Modifier.fillMaxSize()) {
+            if (state.offline) {
+                Text(
+                    stringResource(R.string.offline_banner),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                )
+            }
+            TopBarPullToRefresh(isRefreshing = state.loading, onRefresh = onRefresh, modifier = Modifier.weight(1f).fillMaxWidth()) {
+                val error = state.error
+                if (error != null && state.days.isEmpty()) {
+                    Column(
+                        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(error.asString(), style = MaterialTheme.typography.bodyMedium)
+                        TextButton(onClick = onRefresh) { Text(stringResource(R.string.retry)) }
+                    }
+                } else if (twoPane) {
+                    // Wide screens: the calendar stays on the left while the chosen day fills the right.
+                    Row(Modifier.fillMaxSize()) {
+                        Column(
+                            Modifier.width(CALENDAR_PANE_WIDTH).fillMaxHeight().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+                        ) {
                             MonthCalendar(state, onPreviousMonth, onNextMonth, onSelect, onPickMonth)
                         }
-                        item(key = "day-${state.anchor}") {
-                            DaySection(state.anchor, state.days[state.anchor], state, showHeader = true, onAction, onNote, onExchangePut, onExchangeWithdraw)
+                        key(state.anchor) {
+                            Column(
+                                Modifier.weight(1f).fillMaxHeight().horizontalSwipe(onPrevious, onNext)
+                                    .verticalScroll(rememberScrollState()).padding(start = 8.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+                            ) {
+                                DaySection(state.anchor, state.days[state.anchor], state, showHeader = true, onAction, onNote, onExchangePut, onExchangeWithdraw)
+                            }
+                        }
+                    }
+                } else {
+                    // Dragging sideways moves a day (month view) or a week; the calendar has its own swipe for months.
+                    Box(Modifier.fillMaxSize().horizontalSwipe(onPrevious, onNext), contentAlignment = Alignment.TopCenter) {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.widthIn(max = ContentMaxWidth).fillMaxHeight(),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            if (mode == CalendarMode.WEEK) {
+                                items(state.week, key = { it.toString() }) { day ->
+                                    DaySection(day, state.days[day], state, showHeader = true, onAction, onNote, onExchangePut, onExchangeWithdraw, Modifier.padding(bottom = 12.dp))
+                                }
+                            } else {
+                                item(key = "calendar") {
+                                    MonthCalendar(state, onPreviousMonth, onNextMonth, onSelect, onPickMonth)
+                                }
+                                item(key = "day-${state.anchor}") {
+                                    DaySection(state.anchor, state.days[state.anchor], state, showHeader = true, onAction, onNote, onExchangePut, onExchangeWithdraw)
+                                }
+                            }
                         }
                     }
                 }
             }
+            val barLabel = if (mode == CalendarMode.WEEK) {
+                val first = state.week.first()
+                val last = state.week.last()
+                "${first.dayOfMonth}.${first.monthValue}. – ${last.dayOfMonth}.${last.monthValue}."
+            } else {
+                formatDayHeader(state.anchor).replace("\u00a0", "")
+            }
+            DateBar(
+                label = barLabel,
+                previousDescription = stringResource(if (mode == CalendarMode.WEEK) R.string.week_previous else R.string.day_previous),
+                nextDescription = stringResource(if (mode == CalendarMode.WEEK) R.string.week_next else R.string.day_next),
+                onPrevious = onPrevious,
+                onNext = onNext,
+                longClickDescription = stringResource(R.string.toggle_calendar_mode),
+                onLongClick = onToggleMode,
+            )
         }
-        val barLabel = if (mode == CalendarMode.WEEK) {
-            val first = state.week.first()
-            val last = state.week.last()
-            "${first.dayOfMonth}.${first.monthValue}. – ${last.dayOfMonth}.${last.monthValue}."
-        } else {
-            formatDayHeader(state.anchor).replace("\u00a0", "")
-        }
-        DateBar(
-            label = barLabel,
-            previousDescription = stringResource(if (mode == CalendarMode.WEEK) R.string.week_previous else R.string.day_previous),
-            nextDescription = stringResource(if (mode == CalendarMode.WEEK) R.string.week_next else R.string.day_next),
-            onPrevious = onPrevious,
-            onNext = onNext,
-            longClickDescription = stringResource(R.string.toggle_calendar_mode),
-            onLongClick = onToggleMode,
-        )
     }
 }
+
+private val TWO_PANE_MIN_WIDTH = 840.dp
+private val CALENDAR_PANE_WIDTH = 380.dp
 
 @Composable
 private fun MonthCalendar(
@@ -497,7 +525,11 @@ private fun MealCard(
         color = if (ordered) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // Without the footer row the card ends on text, so the bottom gets the same room as the top (6 dp + the title's 6 dp).
+        Column(
+            Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = if (meal.issued) 12.dp else 8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
             // The meal's own name is its first dish that is not shared with the other meals of the day.
             val title = meal.dishes.getOrNull(hiddenDishes) ?: meal.dishes.firstOrNull()
             Row(verticalAlignment = Alignment.Top) {
