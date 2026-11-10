@@ -13,7 +13,7 @@
 
 ## Project in one paragraph
 
-Unofficial open-source Android client for iCanteen school canteens. Kotlin, Compose, OkHttp, Jsoup.
+Unofficial source-available (PolyForm Strict) Android client for iCanteen school canteens. Kotlin, Compose, OkHttp, Jsoup.
 `:core` is pure JVM (models, `CanteenProvider`, HTML parsers), `:app` is the Android UI. No backend.
 
 ## Non-negotiable rules

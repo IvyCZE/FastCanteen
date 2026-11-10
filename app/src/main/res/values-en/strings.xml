@@ -55,7 +55,7 @@
     <string name="settings_change_password">Change password</string>
     <string name="settings_sign_out">Sign out</string>
     <string name="settings_about">About</string>
-    <string name="settings_about_text">LibreCanteen %1$s. An unofficial open-source iCanteen client, not affiliated with Z-WARE s.r.o.</string>
+    <string name="settings_about_text">LibreCanteen %1$s. An unofficial iCanteen client with public source code, not affiliated with Z-WARE s.r.o.</string>
 
     <string name="password_current">Current password</string>
     <string name="password_new">New password</string>

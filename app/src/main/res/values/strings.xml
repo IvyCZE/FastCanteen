@@ -55,7 +55,7 @@
     <string name="settings_change_password">Změnit heslo</string>
     <string name="settings_sign_out">Odhlásit se</string>
     <string name="settings_about">O aplikaci</string>
-    <string name="settings_about_text">LibreCanteen %1$s. Neoficiální open-source klient pro iCanteen, nespojený se společností Z-WARE s.r.o.</string>
+    <string name="settings_about_text">LibreCanteen %1$s. Neoficiální klient pro iCanteen s veřejným zdrojovým kódem, nespojený se společností Z-WARE s.r.o.</string>
 
     <string name="password_current">Stávající heslo</string>
     <string name="password_new">Nové heslo</string>
