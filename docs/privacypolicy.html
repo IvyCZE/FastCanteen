@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="index, follow">
+<title>FastCanteen – Zásady ochrany osobních údajů / Privacy Policy</title>
+<style>
+  :root { color-scheme: light dark; --bg: #fffaf9; --fg: #261a18; --muted: #6b5a57; --line: #e6d5d1; --accent: #8c3b2e; --code: #f5e4e0; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #141312; --fg: #efe3e0; --muted: #b3a29e; --line: #3a3230; --accent: #f2a99c; --code: #231f1e; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 20px 64px; }
+  h1 { font-size: 2rem; margin: 0 0 4px; }
+  h2 { font-size: 1.5rem; margin: 40px 0 8px; padding-top: 24px; border-top: 1px solid var(--line); }
+  h3 { font-size: 1.1rem; margin: 28px 0 6px; }
+  p, ul { margin: 8px 0; }
+  ul { padding-left: 22px; }
+  li { margin: 4px 0; }
+  a { color: var(--accent); }
+  code { background: var(--code); padding: 1px 5px; border-radius: 4px; font-size: .92em; }
+  .meta { color: var(--muted); margin: 0 0 16px; }
+  nav { display: flex; gap: 16px; margin: 12px 0 0; }
+  nav a { font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>FastCanteen</h1>
+<p class="meta">Poslední aktualizace / Last updated: 2026-11-10</p>
+<nav><a href="#cs">Česky</a><a href="#en">English</a></nav>
+
+<section id="cs" lang="cs">
+<h2>Zásady ochrany osobních údajů</h2>
+
+<h3>1. Aplikace a provozovatel</h3>
+<p><strong>FastCanteen</strong> (<code>yt.ivy.fastcanteen</code>) je neoficiální klient jídelen se systémem iCanteen, bez spojení se společností Z-WARE s.r.o. Provozovatelem aplikace je <strong>IvyCZ</strong> (<a href="https://ivy.yt">ivy.yt</a>). Kontakt: <a href="mailto:me@ivy.yt">me@ivy.yt</a>.</p>
+<p>Provozovatel <strong>nemá vlastní server ani databázi</strong>, na které by aplikace posílala vaše údaje. Záznamy jídelny (objednávky, kredit, platby) spravuje vaše jídelna nebo škola a poskytovatel jejího systému.</p>
+
+<h3>2. Jaké údaje aplikace používá</h3>
+<ul>
+  <li><strong>Přihlášení:</strong> adresa jídelny, uživatelské jméno a heslo.</li>
+  <li><strong>Údaje jídelny dostupné vašemu účtu:</strong> jídelníček, vaše objednávky, ceny, kredit, historie objednávek a plateb, burza obědů a poznámky, které k obědům napíšete.</li>
+  <li><strong>Alergeny:</strong> výběr alergenů, který nastavíte v aplikaci a který se uloží do jídelny. Může jít o údaje o zdraví.</li>
+  <li><strong>Nastavení aplikace:</strong> vzhled, jazyk, zobrazení kalendáře, zámek aplikace a připomínky.</li>
+</ul>
+
+<h3>3. Kam údaje putují</h3>
+<p>Aplikace komunikuje pouze se serverem jídelny na adrese, kterou sami zadáte, a to výhradně přes <strong>HTTPS</strong>. Nešifrovaná spojení Android blokuje. Heslo, objednávky, poznámky a nastavení alergenů se posílají přímo na tento server, stejně jako při práci ve webovém prohlížeči. Server jídelny zpracovává údaje podle pravidel své jídelny nebo školy a může si zaznamenávat například IP adresu a čas požadavku.</p>
+<p>Provozovatel aplikace žádné z těchto údajů <strong>nepřijímá a nevidí</strong>. Aplikace neobsahuje reklamy, analytiku, hlášení pádů ani vlastní push službu a nepoužívá služby Google Play. Aplikace není v žádném obchodě; sestavení se stahují z GitHubu, který má vlastní pravidla.</p>
+<p>Protože provozovatel údaje o vašem účtu nezískává, neurčuje ani účel jejich zpracování. Správcem záznamů jídelny je vaše jídelna nebo škola.</p>
+
+<h3>4. Uložení v zařízení a zabezpečení</h3>
+<ul>
+  <li><strong>Přihlášení</strong> se ukládá šifrovaně (AES-256-GCM) klíčem v Android Keystore, který nelze z telefonu exportovat. Heslo se ukládá proto, aby se aplikace mohla znovu přihlásit, když vyprší relace. Relace (cookies) se drží jen v paměti.</li>
+  <li><strong>Mezipaměť jídelníčků</strong> uchovává posledních 21 dnů včetně vašich objednávek, cen a poznámek, aby šel jídelníček procházet bez připojení. Odkazy pro objednávání se do ní neukládají.</li>
+  <li>Data jsou v soukromém úložišti aplikace a jsou <strong>vyloučena ze záloh</strong> Androidu i z přenosu do nového zařízení.</li>
+  <li><strong>Zámek aplikace</strong> (volitelný) používá systémové okno Androidu pro otisk prstu, obličej nebo zámek displeje. Aplikace biometrické údaje nikdy nevidí.</li>
+  <li>Zařízení chraňte zámkem displeje. Na odemčeném nebo „rootnutém“ zařízení nemůže aplikace data ochránit.</li>
+</ul>
+
+<h3>5. Oznámení</h3>
+<p>Připomínky (volitelné, o objednávce na příští týden) vznikají přímo v zařízení. Nepoužívá se push služba provozovatele. Oprávnění k oznámením aplikace žádá až při zapnutí připomínek a můžete ho kdykoli odebrat v nastavení Androidu. Text oznámení mohou vidět lidé, kteří vidí obrazovku vašeho telefonu.</p>
+
+<h3>6. Uchování a smazání</h3>
+<p>Odhlášení v nastavení smaže uložené přihlášení, mezipaměť jídelníčků a uložený výběr alergenů a vypne připomínky. Obecná nastavení (vzhled, jazyk, názvy alergenů) mohou zůstat. Všechna místní data odstraníte vymazáním dat aplikace v nastavení Androidu nebo odinstalací.</p>
+<p>Tím se nemažou záznamy u jídelny. Ty, včetně žádostí o přístup, opravu nebo výmaz, řešte s jídelnou nebo školou.</p>
+
+<h3>7. Odkazy mimo aplikaci</h3>
+<p>Na přihlašovací obrazovce jsou odkazy na web autora a na tyto zásady. Otevírají se v prohlížeči. Webový server může jako každý server zaznamenávat IP adresu, čas a adresu požadavku. Aplikace při tom neposílá žádné údaje o vašem účtu.</p>
+
+<h3>8. Vaše práva a změny zásad</h3>
+<p>S dotazy k těmto zásadám se obraťte na <a href="mailto:me@ivy.yt">me@ivy.yt</a>. Stížnost můžete podat u <a href="https://uoou.gov.cz/">Úřadu pro ochranu osobních údajů</a>.</p>
+<p>Zásady se mohou měnit se změnou funkcí aplikace. Aktuální verze je na <a href="https://storage.ivy.yt/fastcanteen/privacypolicy">stálém odkazu</a>, datum poslední aktualizace je nahoře.</p>
+</section>
+
+<section id="en" lang="en">
+<h2>Privacy Policy</h2>
+
+<h3>1. App and operator</h3>
+<p><strong>FastCanteen</strong> (<code>yt.ivy.fastcanteen</code>) is an unofficial client for canteens running iCanteen, unaffiliated with Z-WARE s.r.o. The app is operated by <strong>IvyCZ</strong> (<a href="https://ivy.yt">ivy.yt</a>). Contact: <a href="mailto:me@ivy.yt">me@ivy.yt</a>.</p>
+<p>The operator has <strong>no server or database</strong> that the app sends your data to. Canteen records (orders, credit, payments) are managed by your canteen or school and the provider of its system.</p>
+
+<h3>2. Data the app uses</h3>
+<ul>
+  <li><strong>Sign-in:</strong> canteen address, username and password.</li>
+  <li><strong>Canteen data available to your account:</strong> the menu, your orders, prices, credit, order and payment history, the meal exchange, and notes you write on meals.</li>
+  <li><strong>Allergens:</strong> the allergen selection you set in the app, which is saved to the canteen. This can be health-related data.</li>
+  <li><strong>App settings:</strong> appearance, language, calendar view, app lock and reminders.</li>
+</ul>
+
+<h3>3. Where data goes</h3>
+<p>The app communicates only with the canteen server at the address you enter, and only over <strong>HTTPS</strong>. Android blocks unencrypted connections. Your password, orders, notes and allergen settings are sent directly to that server, as they would be from a web browser. The canteen server processes data under the rules of your canteen or school and may log, for example, your IP address and the time of a request.</p>
+<p>The app operator does <strong>not receive or see</strong> any of this data. The app contains no advertising, analytics, crash reporting or push service of its own and does not use Google Play services. It is not published in any app store; builds are downloaded from GitHub, which has its own policies.</p>
+<p>Because the operator does not obtain data about your account, the operator does not determine the purposes of its processing either. The controller of canteen records is your canteen or school.</p>
+
+<h3>4. On-device storage and security</h3>
+<ul>
+  <li><strong>Sign-in</strong> is stored encrypted (AES-256-GCM) with a key in the Android Keystore that cannot be exported from the phone. The password is kept so that the app can sign in again when the session expires. Session cookies are held in memory only.</li>
+  <li><strong>The menu cache</strong> keeps the last 21 days, including your orders, prices and notes, so the menu can be browsed offline. Ordering links are not stored in it.</li>
+  <li>Data lives in app-private storage and is <strong>excluded from Android backups</strong> and device-to-device transfer.</li>
+  <li><strong>App lock</strong> (optional) uses the Android system prompt for fingerprint, face or screen lock. The app never sees biometric data.</li>
+  <li>Protect your device with a screen lock. The app cannot protect data on an unlocked or rooted device.</li>
+</ul>
+
+<h3>5. Notifications</h3>
+<p>Reminders (optional, about next week's order) are generated on your device. No push service of the operator is used. The app asks for the notification permission only when you turn reminders on, and you can revoke it in Android settings at any time. Others who can see your phone screen may see the notification text.</p>
+
+<h3>6. Retention and deletion</h3>
+<p>Signing out in settings deletes the stored sign-in, the menu cache and the stored allergen selection, and turns reminders off. General settings (appearance, language, allergen names) may remain. Remove all local data by clearing the app's data in Android settings or by uninstalling.</p>
+<p>This does not delete records held by the canteen. For those, including requests for access, correction or erasure, contact your canteen or school.</p>
+
+<h3>7. Links outside the app</h3>
+<p>The sign-in screen links to the author's website and to this policy. They open in your browser. The web server may, like any server, log your IP address, the time and the requested address. The app sends no information about your account in doing so.</p>
+
+<h3>8. Your rights and policy changes</h3>
+<p>For questions about this policy, contact <a href="mailto:me@ivy.yt">me@ivy.yt</a>. You may complain to the <a href="https://uoou.gov.cz/">Czech Office for Personal Data Protection</a>.</p>
+<p>This policy may change with the app's features. The current version is at the <a href="https://storage.ivy.yt/fastcanteen/privacypolicy">stable URL</a>; the update date is at the top.</p>
+</section>
+
+</main>
+</body>
+</html>

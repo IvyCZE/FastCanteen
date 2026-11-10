@@ -7,6 +7,11 @@ a calm, fast interface for the weekly menu, one-tap ordering, credit, payments a
 > **Not affiliated with Z-WARE s.r.o.** FastCanteen is an independent, non-commercial project.
 > "iCanteen" is a product of Z-WARE s.r.o. This project contains none of its code, styles or images.
 
+<p align="center">
+  <img src="docs/screenshots/lunches-light.png" width="280" alt="Week view of the menu in the light theme">
+  <img src="docs/screenshots/lunches-dark-month.png" width="280" alt="Month view with the chosen day in the dark theme">
+</p>
+
 ## Features
 
 - Week or month view of the menu (switch in settings or by long-pressing the date bar), with order and cancel deadlines, allergens, and canteen-stated reasons when a meal is locked
@@ -74,7 +79,9 @@ When adding samples, remove names, usernames, addresses, balances, CSRF values a
 
 ## Privacy
 
-Your canteen address and password are entered in the app and stay on your device.
+The app talks only to the canteen address you enter, over HTTPS. There is no server of the author, no
+analytics and no ads; your login is stored encrypted on the device. The full text is the
+[privacy policy](https://storage.ivy.yt/fastcanteen/privacypolicy) (source: [docs/privacypolicy.html](docs/privacypolicy.html)).
 No credentials, school names or personal data belong in this repository.
 
 ## Project notes

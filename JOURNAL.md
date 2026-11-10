@@ -255,8 +255,8 @@ Priority is not confirmed by the user; the assistant's suggestion is first.
 2. **Home-screen widget** (today's meal / order state) (approved in principle).
 3. ~~Tablet / wide layout~~ done (see the log, 2026-10-19); only needs a check on a tablet.
 4. **Release prep** (first beta on GitHub is next; widgets and more notifications wait for an update; license
-   and name are decided, commit e-mails are fixed): public GitHub repository, CI (tests + lint), screenshots,
-   privacy policy host, version bump, signed release distribution, a **parser health check** (detect when the server markup changes
+   and name are decided, commit e-mails are fixed, screenshots and the policy text are in `docs/`): public
+   GitHub repository, CI (tests + lint), uploading the policy to its URL, version bump, signed release distribution, a **parser health check** (detect when the server markup changes
    and fail loudly with a useful message).
 5. Eye icon for the password field on the login screen (text toggle for now; the vector path has to be
    verified on a device).
@@ -304,6 +304,26 @@ visible behavior changes.
 
 ## Log
 
+### 2026-11-10, privacy policy, README screenshots
+- `LoginScreen.kt` now links to `https://storage.ivy.yt/fastcanteen/privacypolicy` (the user's storage host, next
+  to the policy of another of their apps).
+- `docs/privacypolicy.html` is the policy, Czech and English on one page, no external resources, light and dark.
+  The user uploads it to that URL by hand; the repository copy is the source. It is written from the code: login
+  encrypted with a Keystore key (the password is stored, encrypted, for re-login), cookies in memory only, menu
+  cache of 21 days in `noBackupFilesDir`, backups and device transfer excluded, no analytics or server of the
+  author, HTTPS only, sign-out clears the login, cache, allergen selection and reminders. Keep it in sync when
+  storage, permissions or network behavior change (for example widgets or new notifications).
+- Decision for the assistant to confirm: the operator is named **IvyCZ** (handle) with `me@ivy.yt`, not a legal
+  name, because real names stay out of the repository. The other app's policy names the person; if the user wants
+  that here, add it only to the uploaded copy or accept it in the repo. The statement that the operator is not a
+  controller of canteen data is the assistant's reading of the design, not legal advice. The sentence about web
+  server logs on the user's storage host is generic; check it against the real setup.
+- README shows two screenshots side by side (`docs/screenshots/`, light week view and dark month view). The real
+  credit amount was visible in the top bar of both and was painted over with the bar color before committing;
+  the dish names are public menu text. New screenshots must be checked for the credit, notes and school names too.
+- Verified: build and lint are in the commit below; the HTML was only checked for balanced tags, not opened in a
+  browser.
+
 ### 2026-11-10, renamed to FastCanteen
 - The app was called LibreCanteen. "Libre" suggests free software, which PolyForm Strict is not, so the user
   chose **FastCanteen** (searched by the user on Google and GitHub, nothing found; no trademark check was done).
@@ -315,8 +335,8 @@ visible behavior changes.
   name.
 - The new `applicationId` means the phone treats it as a different app: the old install stays next to it, and the
   user has to sign in again. Same signing key, so nothing else changes.
-- The privacy policy link in `LoginScreen.kt` now points to `privacypolicy.fastcanteen.ivy.yt`, by analogy with the
-  old host. That host did not resolve even under the old name; it still has to be set up by the user.
+- The privacy policy link in `LoginScreen.kt` first pointed to `privacypolicy.fastcanteen.ivy.yt` by analogy with the
+  old host (that host never resolved); the next entry replaces it.
 - **History rewrite (not pushed anywhere, no remote existed):** the first 35 commits carried an e-mail with the
   author's private domain. The user asked to change it, so every commit was replayed with `git rebase --root`
   and the machine's configured git identity (`me@ivy.yt`), keeping the original dates. The file contents are
@@ -324,8 +344,8 @@ visible behavior changes.
   "IvyCZ" before; possibly a typo in the global config, to be checked by the user). All commit hashes changed;
   the timeline above was remapped. A backup bundle of the old history was written to `/tmp` and is not part of
   the repository.
-- Still open before the first public push: set up the privacy policy host, decide on the version number, take
-  screenshots (see section 8, item 4).
+- Still open before the first public push: decide on the version number, upload the privacy policy, CI (see
+  section 8, item 4).
 
 ### 2026-10-20, license changed to PolyForm Strict
 - `LICENSE` is now PolyForm Strict 1.0.0 (text from the official repository, with a Required Notice line);
