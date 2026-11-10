@@ -182,26 +182,31 @@ Android 13+ themed icons.
 
 | Date | Commit | What |
 | --- | --- | --- |
-| 2026-10-16 | `6d109eb` | `:core` with login, status and daily menu parsing |
-| | `15d04ba` | Ordering, order history, payments, password change in core |
-| | `165d446` | Android app: week menu, ordering, history, payments, settings |
-| | `5bd6843` | Notes, allergen highlighting, offline cache, reminders, app lock |
-| | `e90d901` | Handle the canteen's double HTML escaping of notes |
-| | `2a0fe2f` | Edit allergen preferences from the app |
-| | `2514ac1` | UI redesign: top bar with account, bottom navigation, week and month views |
-| 2026-10-17 | `e35c292`, `0c99250` | Deadlines in details dialog, allergens per dish, meal highlight |
-| 2026-10-19 | `2503c6b` | One-line top bar, info button |
-| | `dc59868` | Read the exchange and take meals from it |
-| | `9dc6d0a` | Put ordered meals into the exchange and take them back |
-| | `e14e680`, `c15354e` | Burza tab, own offers section, swap icon |
-| | `762017a`, `f509293` | Weekends, swipe, month picker, settings category pages |
-| | `7ea6096`, `f2e2134` | Shared soup shown once, compact card footer, allergen warning icon |
-| | `e5136f0` | Allergen autosave, spacing, day label fix |
-| | `5f65c31` | Release signing from an external keystore file |
-| | `b7bf7e7`, `6cbcac4` | Meal name as title, checkbox ordering, icon-only exchange buttons |
-| | `ebe49e4` .. `8cba23d` | One container per day with left line, soup in its own card |
-| | `12a16cd`, `43e26cd` | Exchange card tidy-up, calendar grid lines, login redesign |
-| | `37dd577` | App language setting, new sign-in screen, calendar marks, issued meals |
+| 2026-10-16 | `c3f68ae` | `:core` with login, status and daily menu parsing |
+| | `a8b6610` | Ordering, order history, payments, password change in core |
+| | `621e201` | Android app: week menu, ordering, history, payments, settings |
+| | `73f376e` | Notes, allergen highlighting, offline cache, reminders, app lock |
+| | `6645e0f` | Handle the canteen's double HTML escaping of notes |
+| | `042e350` | Edit allergen preferences from the app |
+| | `2013d79` | UI redesign: top bar with account, bottom navigation, week and month views |
+| 2026-10-17 | `4b7ba1c`, `20accae` | Deadlines in details dialog, allergens per dish, meal highlight |
+| 2026-10-19 | `9ebb09b` | One-line top bar, info button |
+| | `4a387f5` | Read the exchange and take meals from it |
+| | `983b7cf` | Put ordered meals into the exchange and take them back |
+| | `7e5bea2`, `02df5ec` | Burza tab, own offers section, swap icon |
+| | `8200099`, `e0a0785` | Weekends, swipe, month picker, settings category pages |
+| | `9e8264e`, `00d86f3` | Shared soup shown once, compact card footer, allergen warning icon |
+| | `debc7eb` | Allergen autosave, spacing, day label fix |
+| | `e86f7a2` | Release signing from an external keystore file |
+| | `ab075ba`, `2ffd068` | Meal name as title, checkbox ordering, icon-only exchange buttons |
+| | `a9394f7` .. `b25dce6` | One container per day with left line, soup in its own card |
+| | `1861ee0`, `b484261` | Exchange card tidy-up, calendar grid lines, login redesign |
+| | `c613f74` | App language setting, new sign-in screen, calendar marks, issued meals |
+| 2026-11-10 | `e109415` | Tablet layouts, centered refresh spinner, issued meal margin |
+| | `4ea0201` | License changed to PolyForm Strict |
+| | `12d142b` | Renamed the app to FastCanteen (new package) |
+
+Hashes above are from after the 2026-11-10 history rewrite (see the log); the old ones no longer exist.
 
 Live-tested against a real account during development (always restored afterwards): ordering and
 cancelling, notes, allergen settings, taking a meal from the exchange, putting one in and withdrawing it.
@@ -249,8 +254,9 @@ Priority is not confirmed by the user; the assistant's suggestion is first.
 1. **Pickup reminder and low-credit warning** notifications (approved in principle).
 2. **Home-screen widget** (today's meal / order state) (approved in principle).
 3. ~~Tablet / wide layout~~ done (see the log, 2026-10-19); only needs a check on a tablet.
-4. **Release prep:** public GitHub repository, CI (tests + lint), screenshots, privacy note in README,
-   version bump, signed release distribution, a **parser health check** (detect when the server markup changes
+4. **Release prep** (first beta on GitHub is next; widgets and more notifications wait for an update; license
+   and name are decided, commit e-mails are fixed): public GitHub repository, CI (tests + lint), screenshots,
+   privacy policy host, version bump, signed release distribution, a **parser health check** (detect when the server markup changes
    and fail loudly with a useful message).
 5. Eye icon for the password field on the login screen (text toggle for now; the vector path has to be
    verified on a device).
@@ -311,8 +317,15 @@ visible behavior changes.
   user has to sign in again. Same signing key, so nothing else changes.
 - The privacy policy link in `LoginScreen.kt` now points to `privacypolicy.fastcanteen.ivy.yt`, by analogy with the
   old host. That host did not resolve even under the old name; it still has to be set up by the user.
-- Commits from this session use the git identity configured on the machine (`me@` address); the older commits
-  carry the former e-mail, see the history rewrite note below.
+- **History rewrite (not pushed anywhere, no remote existed):** the first 35 commits carried an e-mail with the
+  author's private domain. The user asked to change it, so every commit was replayed with `git rebase --root`
+  and the machine's configured git identity (`me@ivy.yt`), keeping the original dates. The file contents are
+  identical (same tree hash). Author and committer name became the configured one, which is "IvyCZE" (it was
+  "IvyCZ" before; possibly a typo in the global config, to be checked by the user). All commit hashes changed;
+  the timeline above was remapped. A backup bundle of the old history was written to `/tmp` and is not part of
+  the repository.
+- Still open before the first public push: set up the privacy policy host, decide on the version number, take
+  screenshots (see section 8, item 4).
 
 ### 2026-10-20, license changed to PolyForm Strict
 - `LICENSE` is now PolyForm Strict 1.0.0 (text from the official repository, with a Required Notice line);
@@ -322,10 +335,8 @@ visible behavior changes.
   redistribution, so a custom text would be needed for the exact mix.
 - README states that the only official builds are the repository's releases and that the app is not in any app
   store. This was added by the assistant from the user's concern about store impersonation; confirm it.
-- Open before the first public push: the 35 commits carry the author's e-mail with the private domain (the user
-  wants `me@ivy.yt`; history rewrite to be done by the user, who has the git identity), the app name is
-  undecided (user considering "MeCanteen"), the privacy policy URL in `LoginScreen.kt` did not resolve.
-- Not verified: lint and tests were not rerun after the string change (text only).
+- Not verified: lint and tests were not rerun after the string change (text only); the later rename build
+  covers it.
 
 ### 2026-10-19, tablet layouts, centered refresh spinner, issued meal margin
 - Refresh spinner: the stock `CircularProgressIndicator` was replaced by `RefreshSpinner`
@@ -454,4 +465,4 @@ visible behavior changes.
 
 ### 2026-10-19, journal and agent instructions
 - Wrote this journal and `AGENTS.md` so later sessions start from the same knowledge.
-- State at this point: latest UI commit `43e26cd`; release signing set up; everything above is current.
+- State at this point: latest UI commit `b484261`; release signing set up; everything above is current.
