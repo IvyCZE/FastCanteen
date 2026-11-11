@@ -47,6 +47,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -106,12 +107,26 @@ class LoginViewModel(private val repository: CanteenRepository) : ViewModel() {
 private val FieldShape = RoundedCornerShape(16.dp)
 private val PanelShape = RoundedCornerShape(24.dp)
 
-// The sign-in form sits on a dark panel in every theme. Dark themes get a dark gray page instead of black.
+// Dark themes get a dark gray page instead of black, with a slightly lighter panel and darker fields.
 private val DarkPage = Color(0xFF141312)
-private val PanelColor = Color(0xFF1C1B1A)
-private val PanelField = Color(0xFF141312)
-private val PanelInk = Color(0xFFF2EFEC)
-private val PanelError = Color(0xFFF2B8B5)
+
+private class LoginPalette(val panel: Color, val field: Color, val ink: Color, val error: Color)
+
+private val DarkPalette = LoginPalette(
+    panel = Color(0xFF1C1B1A),
+    field = Color(0xFF141312),
+    ink = Color(0xFFF2EFEC),
+    error = Color(0xFFF2B8B5),
+)
+
+private val LocalLoginPalette = staticCompositionLocalOf { DarkPalette }
+
+@Composable
+private fun loginPalette(dark: Boolean): LoginPalette {
+    if (dark) return DarkPalette
+    val colors = MaterialTheme.colorScheme
+    return LoginPalette(panel = colors.surfaceContainerHigh, field = colors.surface, ink = colors.onSurface, error = colors.error)
+}
 
 // Kept free above and below the content, where the top bar and the footer sit, so the content is centered on the page.
 private val PageEdge = 96.dp
@@ -138,115 +153,119 @@ fun LoginScreen(
     val canSubmit = address.isNotBlank() && username.isNotBlank() && password.isNotEmpty() && !state.loading
     val submit = { if (canSubmit) onSignIn(address, username, password) }
     val background = MaterialTheme.colorScheme.background
-    val page = if (background.luminance() < 0.5f) DarkPage else background
+    val dark = background.luminance() < 0.5f
+    val page = if (dark) DarkPage else background
     val ink = MaterialTheme.colorScheme.onBackground
+    val palette = loginPalette(dark)
 
     BackHandler(enabled = step == STEP_FORM) { step = STEP_WELCOME }
 
-    LightStatusBarIcons(step == STEP_FORM)
+    LightStatusBarIcons(dark && step == STEP_FORM)
 
-    Surface(color = page, contentColor = ink, modifier = Modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxSize()) {
-            Box(Modifier.fillMaxSize().safeDrawingPadding().imePadding()) {
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .widthIn(max = 480.dp)
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = PageEdge)
-                        .verticalScroll(rememberScrollState()),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    if (step == STEP_WELCOME) {
-                        Image(painterResource(R.drawable.ic_logo), contentDescription = null, modifier = Modifier.size(220.dp))
-                        Spacer(Modifier.height(24.dp))
-                        Text(stringResource(R.string.app_name), style = MaterialTheme.typography.displaySmall)
-                        Spacer(Modifier.height(8.dp))
-                        Text(stringResource(R.string.login_tagline), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
-                        Spacer(Modifier.height(32.dp))
-                        Button(
-                            onClick = { step = STEP_FORM },
-                            shape = FieldShape,
-                            colors = ButtonDefaults.buttonColors(containerColor = ink, contentColor = page),
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                        ) {
-                            Text(stringResource(R.string.login_button), style = MaterialTheme.typography.titleMedium)
-                        }
-                    } else {
-                        CompositionLocalProvider(LocalContentColor provides PanelInk) {
-                            Column(
-                                modifier = Modifier.fillMaxWidth().clip(PanelShape).background(PanelColor).padding(24.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
+    CompositionLocalProvider(LocalLoginPalette provides palette) {
+        Surface(color = page, contentColor = ink, modifier = Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxSize()) {
+                Box(Modifier.fillMaxSize().safeDrawingPadding().imePadding()) {
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .widthIn(max = 480.dp)
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = PageEdge)
+                            .verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        if (step == STEP_WELCOME) {
+                            Image(painterResource(R.drawable.ic_logo), contentDescription = null, modifier = Modifier.size(220.dp))
+                            Spacer(Modifier.height(24.dp))
+                            Text(stringResource(R.string.app_name), style = MaterialTheme.typography.displaySmall)
+                            Spacer(Modifier.height(8.dp))
+                            Text(stringResource(R.string.login_tagline), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+                            Spacer(Modifier.height(32.dp))
+                            Button(
+                                onClick = { step = STEP_FORM },
+                                shape = FieldShape,
+                                colors = ButtonDefaults.buttonColors(containerColor = ink, contentColor = page),
+                                modifier = Modifier.fillMaxWidth().height(56.dp),
                             ) {
-                                Text(stringResource(R.string.login_url_title), style = MaterialTheme.typography.titleLarge)
-                                Text(stringResource(R.string.login_url_text), style = MaterialTheme.typography.bodyMedium)
-                                LoginTextField(
-                                    value = address,
-                                    onValueChange = { address = it },
-                                    placeholder = stringResource(R.string.login_address_hint),
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next),
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Text(stringResource(R.string.login_username), style = MaterialTheme.typography.titleLarge)
-                                LoginTextField(
-                                    value = username,
-                                    onValueChange = { username = it },
-                                    placeholder = stringResource(R.string.login_username_hint),
-                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Text(stringResource(R.string.login_password), style = MaterialTheme.typography.titleLarge)
-                                LoginTextField(
-                                    value = password,
-                                    onValueChange = { password = it },
-                                    visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                                    keyboardActions = KeyboardActions(onDone = { submit() }),
-                                    trailing = {
-                                        if (state.loading) {
-                                            CircularProgressIndicator(Modifier.padding(end = 12.dp).size(24.dp), color = PanelInk, strokeWidth = 2.dp)
-                                        } else {
-                                            ArrowButton(stringResource(R.string.login_button), canSubmit) { submit() }
-                                        }
-                                    },
-                                )
-                                Text(
-                                    stringResource(if (showPassword) R.string.hide_password else R.string.show_password),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier
-                                        .align(Alignment.End)
-                                        .clip(MaterialTheme.shapes.extraSmall)
-                                        .clickable(role = Role.Switch) { showPassword = !showPassword }
-                                        .padding(horizontal = 4.dp, vertical = 6.dp),
-                                )
-                                state.error?.let { Text(it.asString(), color = PanelError, style = MaterialTheme.typography.bodyMedium) }
+                                Text(stringResource(R.string.login_button), style = MaterialTheme.typography.titleMedium)
+                            }
+                        } else {
+                            CompositionLocalProvider(LocalContentColor provides palette.ink) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().clip(PanelShape).background(palette.panel).padding(24.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    Text(stringResource(R.string.login_url_title), style = MaterialTheme.typography.titleLarge)
+                                    Text(stringResource(R.string.login_url_text), style = MaterialTheme.typography.bodyMedium)
+                                    LoginTextField(
+                                        value = address,
+                                        onValueChange = { address = it },
+                                        placeholder = stringResource(R.string.login_address_hint),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next),
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(stringResource(R.string.login_username), style = MaterialTheme.typography.titleLarge)
+                                    LoginTextField(
+                                        value = username,
+                                        onValueChange = { username = it },
+                                        placeholder = stringResource(R.string.login_username_hint),
+                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(stringResource(R.string.login_password), style = MaterialTheme.typography.titleLarge)
+                                    LoginTextField(
+                                        value = password,
+                                        onValueChange = { password = it },
+                                        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                                        keyboardActions = KeyboardActions(onDone = { submit() }),
+                                        trailing = {
+                                            if (state.loading) {
+                                                CircularProgressIndicator(Modifier.padding(end = 12.dp).size(24.dp), color = palette.ink, strokeWidth = 2.dp)
+                                            } else {
+                                                ArrowButton(stringResource(R.string.login_button), canSubmit) { submit() }
+                                            }
+                                        },
+                                    )
+                                    Text(
+                                        stringResource(if (showPassword) R.string.hide_password else R.string.show_password),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier
+                                            .align(Alignment.End)
+                                            .clip(MaterialTheme.shapes.extraSmall)
+                                            .clickable(role = Role.Switch) { showPassword = !showPassword }
+                                            .padding(horizontal = 4.dp, vertical = 6.dp),
+                                    )
+                                    state.error?.let { Text(it.asString(), color = palette.error, style = MaterialTheme.typography.bodyMedium) }
+                                }
                             }
                         }
                     }
-                }
 
-                LoginFooter(onLanguage, Modifier.align(Alignment.BottomCenter))
-            }
-            if (step == STEP_FORM) {
-                // Fills the width and the status bar area, in the panel color so it reads lighter than the dark page.
-                Row(
-                    Modifier.align(Alignment.TopCenter).fillMaxWidth().background(PanelColor).statusBarsPadding()
-                        .padding(start = 24.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = PanelInk,
-                        modifier = Modifier.weight(1f),
-                    )
-                    IconButton(onClick = { step = STEP_WELCOME }) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back),
-                            tint = PanelInk,
-                            modifier = Modifier.size(32.dp),
+                    LoginFooter(onLanguage, Modifier.align(Alignment.BottomCenter))
+                }
+                if (step == STEP_FORM) {
+                    // Fills the width and the status bar area, in the panel color so it reads lighter than the dark page.
+                    Row(
+                        Modifier.align(Alignment.TopCenter).fillMaxWidth().background(palette.panel).statusBarsPadding()
+                            .padding(start = 24.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.headlineLarge,
+                            color = palette.ink,
+                            modifier = Modifier.weight(1f),
                         )
+                        IconButton(onClick = { step = STEP_WELCOME }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back),
+                                tint = palette.ink,
+                                modifier = Modifier.size(32.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -254,7 +273,7 @@ fun LoginScreen(
     }
 }
 
-/** The top bar is dark in every theme, so the status bar icons must be light while it is shown. */
+/** The dark theme's top bar is dark, so the status bar icons must be light while it is shown. */
 @Composable
 private fun LightStatusBarIcons(enabled: Boolean) {
     val view = LocalView.current
@@ -281,7 +300,8 @@ private fun LoginTextField(
     visualTransformation: VisualTransformation = VisualTransformation.None,
     trailing: (@Composable () -> Unit)? = null,
 ) {
-    val hint = PanelInk.copy(alpha = 0.6f)
+    val palette = LocalLoginPalette.current
+    val hint = palette.ink.copy(alpha = 0.6f)
     TextField(
         value = value,
         onValueChange = onValueChange,
@@ -293,13 +313,13 @@ private fun LoginTextField(
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
         colors = TextFieldDefaults.colors(
-            focusedContainerColor = PanelField,
-            unfocusedContainerColor = PanelField,
+            focusedContainerColor = palette.field,
+            unfocusedContainerColor = palette.field,
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
-            focusedTextColor = PanelInk,
-            unfocusedTextColor = PanelInk,
-            cursorColor = PanelInk,
+            focusedTextColor = palette.ink,
+            unfocusedTextColor = palette.ink,
+            cursorColor = palette.ink,
             focusedPlaceholderColor = hint,
             unfocusedPlaceholderColor = hint,
         ),
@@ -309,11 +329,12 @@ private fun LoginTextField(
 
 @Composable
 private fun ArrowButton(description: String, enabled: Boolean, onClick: () -> Unit) {
+    val ink = LocalLoginPalette.current.ink
     IconButton(onClick = onClick, enabled = enabled) {
         Icon(
             Icons.AutoMirrored.Filled.ArrowForward,
             contentDescription = description,
-            tint = if (enabled) PanelInk else PanelInk.copy(alpha = 0.38f),
+            tint = if (enabled) ink else ink.copy(alpha = 0.38f),
             modifier = Modifier.size(32.dp),
         )
     }

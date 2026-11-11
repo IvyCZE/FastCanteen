@@ -166,13 +166,15 @@ Two steps in `LoginScreen.kt`. The page follows the app theme: white in the ligh
 (AMOLED included) a dark gray page (`#141312`) instead of the near-black theme background. Elements are black
 on white and white on dark gray; system bar icons follow the theme.
 1. **Welcome:** the logo (`drawable/ic_logo.xml`, from the author's SVG), name, tagline, sign-in button.
-2. **Form:** canteen address, username and password on one dark panel (`#1c1b1a`, the logo circle color), centered on
-   the whole page. The fields are a step darker (`#141312`), so they show as boxes on the panel.
+2. **Form:** canteen address, username and password on one panel, centered on the whole page. Dark theme: panel
+   `#1c1b1a` (the logo circle color) with fields a step darker (`#141312`). Light theme: panel `surfaceContainerHigh`
+   with `surface` fields and theme ink (it used to be dark in every theme; the user asked for it to follow the
+   theme). The palette is `LoginPalette` in `LoginScreen.kt`.
    The arrow in the password field signs in (a spinner while working); a small text link shows or hides the
    password; errors appear under the fields.
 The form has an app bar with the app name and a back arrow on the right (as in the author's mockup). The bar
-is the lighter panel color (`#1c1b1a`) across the full width and under the status bar, so the status bar icons
-are forced light while it is shown (restored afterwards). System Back returns to the welcome step. The step, address and username survive a recreate, the password does not.
+is the panel color across the full width and under the status bar. In the dark theme the status bar icons
+are forced light while it is shown (restored afterwards); in the light theme they stay dark. System Back returns to the welcome step. The step, address and username survive a recreate, the password does not.
 Footer on both steps: "Created by ivy.yt" (underlined link to the author's site), "Privacy Policy" (link to
 the project's privacy policy page), and the text "Czech / English". The active language is underlined; a tap on it
 switches the app language. "Privacy Policy" and the two language names are not
@@ -320,6 +322,10 @@ visible behavior changes.
   is shared, now `internal`). Reuses the existing string, so no new translations.
 - Version bumped to 0.1.1 / `versionCode 2` (replaces the earlier idea of `0.1.0-beta.1`, the user's choice).
 - Verified by build, tests and lint; the button was not seen on a device.
+- The privacy policy link was already in the login footer on both steps (checked in the code).
+- The login panel was dark in every theme; it now follows the theme (light panel in light mode, see section 5).
+  Built without a device: check the light theme on the phone (panel contrast against the page, field boxes,
+  dark status bar icons over the form's top bar, error color).
 
 ### 2026-11-10, fresh link before every change, week view scrolls to Monday
 - A tester's canteen answered every first order attempt with a message about several browser windows; the
