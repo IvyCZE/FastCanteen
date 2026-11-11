@@ -243,7 +243,8 @@ Notes:
 - Updates only install over a build signed with the same key, so **the keystore must be backed up**.
   Debug and release builds use different keys and cannot replace each other.
 - The release build has been built and signature-verified but not run on a device yet.
-- Version is still 0.1.0 (`versionCode 1`); bump both before the next release.
+- Version is 0.1.1 (`versionCode 2`); bump both before every release. The signing keystore lives outside the
+  repo (the user keeps the backup); never commit it.
 
 ### Distribution during development
 Debug APKs are built after each change and served from a local directory over the LAN/Tailscale; the user
@@ -313,6 +314,12 @@ Also update sections 5, 6, 8 and 9 above when they stop being true, and the READ
 visible behavior changes.
 
 ## Log
+
+### 2026-11-11, privacy policy link in About, version 0.1.1
+- Settings → About now has a "Privacy Policy" button opening the same URL as the login footer (`PRIVACY_URL`
+  is shared, now `internal`). Reuses the existing string, so no new translations.
+- Version bumped to 0.1.1 / `versionCode 2` (replaces the earlier idea of `0.1.0-beta.1`, the user's choice).
+- Verified by build, tests and lint; the button was not seen on a device.
 
 ### 2026-11-10, fresh link before every change, week view scrolls to Monday
 - A tester's canteen answered every first order attempt with a message about several browser windows; the

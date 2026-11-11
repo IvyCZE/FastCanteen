@@ -60,6 +60,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -87,6 +88,7 @@ import yt.ivy.fastcanteen.ui.theme.dynamicColorSupported
 import yt.ivy.fastcanteen.data.CanteenRepository
 import yt.ivy.fastcanteen.ui.UiText
 import yt.ivy.fastcanteen.ui.asString
+import yt.ivy.fastcanteen.ui.login.PRIVACY_URL
 import yt.ivy.fastcanteen.ui.toUiText
 
 data class PasswordState(
@@ -274,6 +276,10 @@ fun SettingsScreen(
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
+                            val uriHandler = LocalUriHandler.current
+                            TextButton(onClick = { runCatching { uriHandler.openUri(PRIVACY_URL) } }) {
+                                Text(stringResource(R.string.login_privacy_policy))
+                            }
                         }
                     }
                 }

@@ -120,7 +120,7 @@ private const val STEP_WELCOME = 0
 private const val STEP_FORM = 1
 
 private const val AUTHOR_URL = "https://ivy.yt"
-private const val PRIVACY_URL = "https://storage.ivy.yt/fastcanteen/privacypolicy"
+internal const val PRIVACY_URL = "https://storage.ivy.yt/fastcanteen/privacypolicy"
 
 @Composable
 fun LoginScreen(
