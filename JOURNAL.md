@@ -317,6 +317,16 @@ visible behavior changes.
 
 ## Log
 
+### 2026-11-11, published on GitHub
+- Remote `origin` is `https://github.com/IvyCZE/FastCanteen` (public). `main` and the tag `v0.1.1` (commit
+  `9c5106c`) were pushed at the user's request; the history was leak-scanned first (all commits, tracked files,
+  messages).
+- GitHub pre-release `v0.1.1` carries `FastCanteen-0.1.1.apk` and its `.sha256`; the downloaded asset matches the
+  checksum of the locally built, signed APK. The release notes list the known limitations.
+- The user confirmed: official builds are only the releases in this repository, screenshots, name and e-mail may
+  be public, and the author's side logs nothing.
+- Next releases: bump version, build signed APK, tag, `gh release create`. The keystore is backed up by the user.
+
 ### 2026-11-11, privacy policy link in About, version 0.1.1
 - Settings → About now has a "Privacy Policy" button opening the same URL as the login footer (`PRIVACY_URL`
   is shared, now `internal`). Reuses the existing string, so no new translations.
